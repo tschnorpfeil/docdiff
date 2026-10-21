@@ -695,6 +695,45 @@ __DIFF_JS__
       color: hsl(var(--foreground));
     }
 
+    /* Dual-Upload Empty State for Inline / Mobile Mode */
+    .empty-dual-slots {
+      margin-top: 14px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+    .empty-slot-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-md);
+      background: hsl(var(--ton-1));
+      box-shadow: inset 0 0 0 1px var(--kante-200);
+    }
+    .empty-slot-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+    .empty-slot-label {
+      font-size: var(--text-3xs);
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+    }
+    .empty-slot-file {
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: hsl(var(--foreground));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .empty-state-sm {
       padding: 32px 16px;
       max-width: 220px;
@@ -1041,7 +1080,13 @@ __DIFF_JS__
       gap: 8px;
     }
 
-    /* ── Responsive Tiers: Laptop (<= 1120px), Tablet (<= 960px), Mobile (<= 680px) */
+    /* ── Responsive Tiers: Laptop (<= 1120px), Tablet (<= 960px), Mobile (<= 720px) */
+    .header-right-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     @media (max-width: 1120px) {
       #btn-sync-scroll {
         display: none;
@@ -1090,47 +1135,103 @@ __DIFF_JS__
       }
     }
 
-    @media (max-width: 680px) {
-      /* On Mobile: Compact two-row header & full-width readable panes */
+    @media (max-width: 720px) {
+      /* On Mobile: Purpose-built 2-row header + 1-row dual document bar */
       .header-bar {
+        display: grid;
+        grid-template-columns: 1fr auto;
         height: auto;
-        min-height: 40px;
-        padding: 6px 10px;
-        flex-wrap: wrap;
-        gap: 6px;
+        padding: 0;
+        gap: 0;
       }
-      .header-cluster {
-        flex-wrap: wrap;
+      .header-right-wrap {
+        display: contents;
+      }
+      .header-brand {
+        grid-row: 1;
+        grid-column: 1;
+        height: 38px;
+        padding: 0 0 0 10px;
+        min-width: 0;
+      }
+      .header-tools {
+        grid-row: 1;
+        grid-column: 2;
+        height: 38px;
+        padding: 0 8px 0 4px;
         gap: 4px;
       }
-      .search-box {
-        width: 108px;
+      .header-nav {
+        grid-row: 2;
+        grid-column: 1 / -1;
+        height: 36px;
+        padding: 0 10px;
+        border-top: 1px solid hsl(var(--border));
+        background: hsl(var(--ton-1));
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
       }
-      .search-box:focus-within {
-        width: 136px;
+      .header-nav .divider-v {
+        display: none;
       }
-      .kbd-hint, #i18n-changes-label {
+      .header-nav .search-box {
+        flex: 1;
+        width: auto;
+        min-width: 64px;
+      }
+      .header-nav .search-box:focus-within {
+        width: auto;
+      }
+      .kbd-hint, #i18n-changes-label, #btn-clear {
         display: none;
       }
       .col-bars {
-        height: auto;
-        min-height: 56px;
-        grid-template-columns: 1fr !important;
-      }
-      .col-bars > div:nth-child(2) {
-        display: none !important;
+        height: 32px !important;
+        grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr) !important;
       }
       .col-bar {
-        height: 28px;
-        padding: 0 10px;
-        border-right: 0;
-        border-bottom: 1px solid hsl(var(--border));
+        height: 32px;
+        padding: 0 8px;
+        gap: 6px;
+        overflow: hidden;
       }
-      .col-bar:last-of-type {
-        border-bottom: 0;
+      .col-label, .col-bar .trenner, .col-meta-badge, #i18n-upload-left, #i18n-upload-right {
+        display: none !important;
       }
-      .workspace {
-        height: calc(100dvh - 104px);
+      #btn-upload-left, #btn-upload-right {
+        width: 22px;
+        padding: 0 !important;
+      }
+      .col-filename {
+        font-size: 11px;
+      }
+      /* Mobile Split mode: hide 20px center gutter so both columns fit cleanly */
+      .center-gutter {
+        display: none !important;
+      }
+      .workspace,
+      body.sidebar-collapsed .workspace {
+        height: calc(100dvh - 106px);
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+      }
+      body.view-inline .workspace,
+      body.view-inline.sidebar-collapsed .workspace {
+        height: calc(100dvh - 106px);
+        grid-template-columns: 1fr !important;
+      }
+      .doc-pane {
+        padding: 10px 8px 64px 8px;
+      }
+      .doc-pane .clause {
+        padding: 6px 8px;
+        font-size: 11px;
+        line-height: 1.45;
+        hyphens: auto;
+      }
+      .doc-pane-unified {
+        padding: 12px 12px 64px 12px;
       }
       .dialog-body {
         grid-template-columns: 1fr;
@@ -1181,7 +1282,7 @@ __DIFF_JS__
 
   <!-- ── 1. HEADER BAR ──────────────────────────────────────────────────────── -->
   <header class="header-bar">
-    <div class="header-cluster">
+    <div class="header-cluster header-brand">
       <span class="app-title">Doc Diff</span>
       <div class="divider-v"></div>
       <div class="stat-summary" aria-live="polite">
@@ -1192,97 +1293,100 @@ __DIFF_JS__
       </div>
     </div>
 
-    <div class="header-cluster">
-      <div class="search-box">
-        <svg class="icon" style="color:hsl(var(--muted-foreground))" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" id="search-input" placeholder="Suchen…" aria-label="Search" />
-        <span class="kbd-hint">/</span>
-      </div>
-
-      <button type="button" class="btn btn-icon" id="btn-prev" title="Vorherige Änderung (K)">
-        <svg class="icon" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
-      </button>
-      <button type="button" class="btn btn-icon" id="btn-next" title="Nächste Änderung (J)">
-        <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-      </button>
-
-      <div class="divider-v"></div>
-
-      <!-- View Mode Toggle: Split (Side-by-Side) vs. Inline (Unified Redline) -->
-      <div class="seg-group" role="group" aria-label="View mode">
-        <button type="button" class="seg-btn" id="btn-mode-split" aria-pressed="true">
-          <span>Split</span>
-        </button>
-        <button type="button" class="seg-btn" id="btn-mode-inline" aria-pressed="false">
-          <span>Inline</span>
-        </button>
-      </div>
-
-      <button type="button" class="btn" id="btn-only-changes" aria-pressed="false">
-        <span id="i18n-btn-only-changes">Nur Änderungen</span>
-      </button>
-
-      <button type="button" class="btn" id="btn-sync-scroll" aria-pressed="true">
-        <span>Sync</span>
-      </button>
-
-      <button type="button" class="btn" id="btn-paste-modal">
-        <span id="i18n-btn-text">Text</span>
-      </button>
-
-      <!-- Multi-Format Export Dropdown -->
-      <div class="dropdown-wrap" id="export-dropdown-wrap">
-        <button type="button" class="btn" id="btn-export-menu" aria-expanded="false">
-          <svg class="icon" style="width:12px;height:12px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span id="i18n-btn-export">Export</span>
-        </button>
-        <div class="dropdown-menu" id="export-menu" role="menu">
-          <button type="button" class="dropdown-item" data-export="print" role="menuitem">
-            <span class="dropdown-item-left">
-              <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
-              <span id="i18n-exp-pdf">PDF / Drucken</span>
-            </span>
-            <span class="dropdown-ext">PDF</span>
+    <div class="header-right-wrap">
+      <div class="header-cluster header-nav">
+        <div class="seg-group" role="group" aria-label="View mode">
+          <button type="button" class="seg-btn" id="btn-mode-split" aria-pressed="true">
+            <span>Split</span>
           </button>
-          <button type="button" class="dropdown-item" data-export="word" role="menuitem">
-            <span class="dropdown-item-left">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span id="i18n-exp-word">Word Redline</span>
-            </span>
-            <span class="dropdown-ext">.doc</span>
-          </button>
-          <button type="button" class="dropdown-item" data-export="html" role="menuitem">
-            <span class="dropdown-item-left">
-              <svg class="icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-              <span id="i18n-exp-html">HTML Diff-Report</span>
-            </span>
-            <span class="dropdown-ext">.html</span>
-          </button>
-          <button type="button" class="dropdown-item" data-export="md" role="menuitem">
-            <span class="dropdown-item-left">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              <span id="i18n-exp-md">Markdown Bericht</span>
-            </span>
-            <span class="dropdown-ext">.md</span>
+          <button type="button" class="seg-btn" id="btn-mode-inline" aria-pressed="false">
+            <span>Inline</span>
           </button>
         </div>
+
+        <button type="button" class="btn" id="btn-only-changes" aria-pressed="false">
+          <span id="i18n-btn-only-changes">Nur Änderungen</span>
+        </button>
+
+        <div class="divider-v"></div>
+
+        <div class="search-box">
+          <svg class="icon" style="color:hsl(var(--muted-foreground))" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="search-input" placeholder="Suchen…" aria-label="Search" />
+          <span class="kbd-hint">/</span>
+        </div>
+
+        <button type="button" class="btn btn-icon" id="btn-prev" title="Vorherige Änderung (K)">
+          <svg class="icon" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
+        </button>
+        <button type="button" class="btn btn-icon" id="btn-next" title="Nächste Änderung (J)">
+          <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
       </div>
 
-      <button type="button" class="btn btn-ghost" id="btn-clear">
-        <span id="i18n-btn-clear">Leeren</span>
-      </button>
+      <div class="header-cluster header-tools">
+        <button type="button" class="btn" id="btn-sync-scroll" aria-pressed="true">
+          <span>Sync</span>
+        </button>
 
-      <button type="button" class="btn btn-ghost font-mono" id="btn-lang" style="padding:0 6px;font-size:11px;" title="Sprache / Language (DE/EN)">
-        DE
-      </button>
+        <button type="button" class="btn" id="btn-paste-modal">
+          <span id="i18n-btn-text">Text</span>
+        </button>
 
-      <button type="button" class="btn btn-icon btn-ghost" id="btn-theme" title="Light / Dark">
-        <svg class="icon" id="icon-theme" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-      </button>
+        <!-- Multi-Format Export Dropdown -->
+        <div class="dropdown-wrap" id="export-dropdown-wrap">
+          <button type="button" class="btn" id="btn-export-menu" aria-expanded="false">
+            <svg class="icon" style="width:12px;height:12px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="i18n-btn-export">Export</span>
+          </button>
+          <div class="dropdown-menu" id="export-menu" role="menu">
+            <button type="button" class="dropdown-item" data-export="print" role="menuitem">
+              <span class="dropdown-item-left">
+                <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                <span id="i18n-exp-pdf">PDF / Drucken</span>
+              </span>
+              <span class="dropdown-ext">PDF</span>
+            </button>
+            <button type="button" class="dropdown-item" data-export="word" role="menuitem">
+              <span class="dropdown-item-left">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span id="i18n-exp-word">Word Redline</span>
+              </span>
+              <span class="dropdown-ext">.doc</span>
+            </button>
+            <button type="button" class="dropdown-item" data-export="html" role="menuitem">
+              <span class="dropdown-item-left">
+                <svg class="icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span id="i18n-exp-html">HTML Diff-Report</span>
+              </span>
+              <span class="dropdown-ext">.html</span>
+            </button>
+            <button type="button" class="dropdown-item" data-export="md" role="menuitem">
+              <span class="dropdown-item-left">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span id="i18n-exp-md">Markdown Bericht</span>
+              </span>
+              <span class="dropdown-ext">.md</span>
+            </button>
+          </div>
+        </div>
 
-      <button type="button" class="btn btn-icon" id="btn-toggle-sidebar" aria-pressed="true">
-        <svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>
-      </button>
+        <button type="button" class="btn btn-ghost" id="btn-clear">
+          <span id="i18n-btn-clear">Leeren</span>
+        </button>
+
+        <button type="button" class="btn btn-ghost font-mono" id="btn-lang" style="padding:0 6px;font-size:11px;" title="Sprache / Language (DE/EN)">
+          DE
+        </button>
+
+        <button type="button" class="btn btn-icon btn-ghost" id="btn-theme" title="Light / Dark">
+          <svg class="icon" id="icon-theme" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+
+        <button type="button" class="btn btn-icon" id="btn-toggle-sidebar" aria-pressed="true">
+          <svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -1743,7 +1847,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         ? 'de'
         : 'en';
 
-    const isMobileViewport = typeof window !== 'undefined' && window.innerWidth <= 680;
+    const isMobileViewport = typeof window !== 'undefined' && window.innerWidth <= 720;
     const isTabletOrSmaller = typeof window !== 'undefined' && window.innerWidth <= 960;
 
     const state = {
@@ -2169,6 +2273,52 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       return '';
     }
 
+    function coalesceUnifiedTokens(wordDiffs) {
+      const out = [];
+      let i = 0;
+      const isChange = t => Boolean(t && (t.removed || t.added));
+      const isBridgeSpace = idx =>
+        idx > 0 &&
+        idx + 1 < wordDiffs.length &&
+        !isChange(wordDiffs[idx]) &&
+        /^\s+$/.test(wordDiffs[idx].value) &&
+        isChange(wordDiffs[idx - 1]) &&
+        isChange(wordDiffs[idx + 1]);
+
+      while (i < wordDiffs.length) {
+        if (!isChange(wordDiffs[i])) {
+          out.push({ value: wordDiffs[i].value });
+          i++;
+          continue;
+        }
+        const run = [];
+        while (i < wordDiffs.length && (isChange(wordDiffs[i]) || isBridgeSpace(i))) {
+          run.push(wordDiffs[i]);
+          i++;
+        }
+        const hasRem = run.some(t => t.removed);
+        const hasAdd = run.some(t => t.added);
+        if (hasRem && hasAdd) {
+          const delStr = run
+            .filter(t => !t.added)
+            .map(t => t.value)
+            .join('');
+          const insStr = run
+            .filter(t => !t.removed)
+            .map(t => t.value)
+            .join('');
+          out.push({ value: delStr, removed: true });
+          out.push({ value: ' ' });
+          out.push({ value: insStr, added: true });
+        } else if (hasRem) {
+          out.push({ value: run.map(t => t.value).join(''), removed: true });
+        } else if (hasAdd) {
+          out.push({ value: run.map(t => t.value).join(''), added: true });
+        }
+      }
+      return out;
+    }
+
     function renderUnifiedBlockHtml(row, query) {
       if (row.type === 'equal') {
         return escapeAndHighlightText(row.rightBlock.text, query);
@@ -2180,7 +2330,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         return `<ins class="tok-ins">${escapeAndHighlightText(row.rightBlock.text, query)}</ins>`;
       }
       if (row.type === 'modified') {
-        return row.wordDiffs
+        return coalesceUnifiedTokens(row.wordDiffs)
           .map(part => {
             const content = escapeAndHighlightText(part.value, query);
             if (part.removed) return `<del class="tok-del">${content}</del>`;
@@ -2208,6 +2358,43 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
           <div class="empty-desc">${escapeHtml(t('emptyDesc'))}</div>
           <div class="empty-actions">
             <button type="button" class="btn btn-primary" id="${uploadId}">${escapeHtml(t('chooseFile'))}</button>
+            <button type="button" class="btn btn-open-paste">${escapeHtml(t('pasteText'))}</button>
+          </div>
+          <button type="button" class="empty-sample-trigger btn-load-sample">${escapeHtml(t('loadSample'))}</button>
+        </div>
+      `;
+    }
+
+    function renderUnifiedEmptyState(leftCount, rightCount) {
+      const leftFile = leftCount > 0 ? `${state.leftName || 'Original'} (${leftCount} ${t('unitPara')})` : t('noFile');
+      const rightFile = rightCount > 0 ? `${state.rightName || 'Revised'} (${rightCount} ${t('unitPara')})` : t('noFile');
+      return `
+        <div class="empty-state" data-empty-state>
+          <svg class="empty-glyph" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          <h2 class="empty-title">${escapeHtml(t('colLeft'))} vs. ${escapeHtml(t('colRight'))}</h2>
+          <div class="empty-desc">${escapeHtml(t('emptyDesc'))}</div>
+          <div class="empty-dual-slots">
+            <div class="empty-slot-row">
+              <div class="empty-slot-info">
+                <span class="empty-slot-label">1 · ${escapeHtml(t('colLeft'))}</span>
+                <span class="empty-slot-file">${escapeHtml(leftFile)}</span>
+              </div>
+              <button type="button" class="btn ${leftCount === 0 ? 'btn-primary' : ''}" id="btn-empty-upload-left">${escapeHtml(t('chooseFile'))}</button>
+            </div>
+            <div class="empty-slot-row">
+              <div class="empty-slot-info">
+                <span class="empty-slot-label">2 · ${escapeHtml(t('colRight'))}</span>
+                <span class="empty-slot-file">${escapeHtml(rightFile)}</span>
+              </div>
+              <button type="button" class="btn ${leftCount > 0 && rightCount === 0 ? 'btn-primary' : ''}" id="btn-empty-upload-right">${escapeHtml(t('chooseFile'))}</button>
+            </div>
+          </div>
+          <div class="empty-actions">
             <button type="button" class="btn btn-open-paste">${escapeHtml(t('pasteText'))}</button>
           </div>
           <button type="button" class="empty-sample-trigger btn-load-sample">${escapeHtml(t('loadSample'))}</button>
@@ -2284,7 +2471,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
         setSafeContainerHtml(
           sheetUnified,
-          renderPaneEmptyState(leftBlocks.length === 0 ? 'left' : 'right')
+          renderUnifiedEmptyState(leftBlocks.length, rightBlocks.length)
         );
 
         bindEmptyStateButtons();
@@ -2798,7 +2985,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         } else if (row.type === 'inserted') {
           lines.push(`${prefix}**${row.rightBlock.text}**`);
         } else if (row.type === 'modified') {
-          const mdDiff = row.wordDiffs
+          const mdDiff = coalesceUnifiedTokens(row.wordDiffs)
             .map(p => (p.removed ? `~~${p.value}~~` : p.added ? `**${p.value}**` : p.value))
             .join('');
           lines.push(`${prefix}${mdDiff}`);
