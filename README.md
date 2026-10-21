@@ -62,7 +62,9 @@ Doc Diff is built so that any data protection officer or security auditor can ve
 - **Responsive Across Desktop, Laptop, Tablet & Mobile:** Switch seamlessly between **Split (Side-by-Side)** and **Inline (Unified Redline)** view modes. Automatically adapts on tablets (slide-over change drawer) and smartphones (single-column inline redline with `100dvh` viewport sizing).
 - **Clause-Aware Alignment:** Pre-tokenized Needleman-Wunsch dynamic programming with $O(N)$ prefix/suffix trimming aligns moved, inserted, or deleted contract clauses (`§`, `(1)`, `1.1`, `Section`) and coalesces adjacent word, number, and date changes into clean red/green inline highlights.
 - **Synchronized Scrolling & Bi-Directional Hover:** Hovering any clause highlights its counterpart across both panes, draws a smooth Bezier connector across the center gutter, and highlights the corresponding entry in the change list.
+- **Direct Inline Clause Editing & 1-Click Revert (`↺ Original`):** Double-click any clause in the revised or unified pane to edit its text directly in place (`Enter` to apply, `Esc` to cancel) and re-run the diff in `< 5 ms`. Hover any changed clause to click **`↺ Original`** and revert that specific clause back to the original version (`Cmd+Z` / `Ctrl+Z` to undo).
 - **Multi-Format Client-Side Export:** Export comparisons locally without any server roundtrip:
+  - **Copy Final Text:** 1-click copy of the clean, edited target text to the clipboard
   - **PDF / Print (`Cmd+P` / `Ctrl+P`):** Clean two-column or unified redline print layout
   - **Word Redline (`.doc`):** Formatted Word-compatible redline document with `<del>` strikethroughs and `<ins>` insertions
   - **HTML Report (`.html`):** Standalone, read-only HTML diff report for archiving or sharing
@@ -71,6 +73,7 @@ Doc Diff is built so that any data protection officer or security auditor can ve
   - `J` / `K` — Jump to next / previous change
   - `/` — Focus full-text search
   - `C` — Toggle "Changes only" (`Nur Änderungen`) filter
+  - `Cmd+Z` / `Ctrl+Z` — Undo inline clause edits or reverts
   - `Esc` — Close menus, drawers, or dialogs
 - **Bilingual UI (`DE` / `EN`):** Auto-detects browser language with an instant `DE` / `EN` toggle in the header bar and built-in sample contracts in both German and English.
 

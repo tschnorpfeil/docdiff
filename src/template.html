@@ -854,6 +854,69 @@ __DIFF_JS__
       box-shadow: inset 0 0 0 1px var(--kante-300);
     }
 
+    /* Micro-Action: 1-Click Revert to Original & Direct Inline Editor */
+    .clause-revert-btn {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: var(--radius-sm);
+      border: 0;
+      background: hsl(var(--card));
+      color: hsl(var(--muted-foreground));
+      box-shadow: 0 0 0 1px var(--kante-300), var(--elev-1);
+      font-family: var(--font-sans);
+      font-size: var(--text-3xs);
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 80ms ease-out, color 80ms ease-out, background-color 80ms ease-out;
+      z-index: 5;
+    }
+    .clause.is-hovered .clause-revert-btn,
+    .clause.is-active .clause-revert-btn,
+    .clause-revert-btn:focus-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .clause-revert-btn:hover {
+      background: hsl(var(--ton-2));
+      color: hsl(var(--foreground));
+    }
+
+    .clause.is-editing {
+      padding: 4px 8px;
+      background: hsl(var(--card)) !important;
+      box-shadow: inset 0 0 0 1.5px hsl(var(--ring)) !important;
+    }
+    .clause-inline-editor {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      color: hsl(var(--foreground));
+      font-family: var(--font-sans);
+      font-size: inherit;
+      font-weight: inherit;
+      line-height: inherit;
+      resize: none;
+      overflow: hidden;
+      display: block;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      margin: 3px 4px;
+      background: hsl(var(--border));
+    }
+
     del.tok-del {
       padding: 1px 3px;
       margin: 0 0.5px;
@@ -1355,6 +1418,14 @@ __DIFF_JS__
             <span id="i18n-btn-export">Export</span>
           </button>
           <div class="dropdown-menu" id="export-menu" role="menu">
+            <button type="button" class="dropdown-item" data-export="copy" role="menuitem">
+              <span class="dropdown-item-left">
+                <svg class="icon" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span id="i18n-exp-copy">Finalen Text kopieren</span>
+              </span>
+              <span class="dropdown-ext">Copy</span>
+            </button>
+            <div class="dropdown-divider" role="separator"></div>
             <button type="button" class="dropdown-item" data-export="print" role="menuitem">
               <span class="dropdown-item-left">
                 <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
@@ -1545,10 +1616,15 @@ __DIFF_JS__
         textBtn: 'Text',
         textBtnTitle: 'Text direkt einfügen',
         exportBtn: 'Export',
+        expCopy: 'Finalen Text kopieren',
+        copiedLabel: '✓ Kopiert',
         expPdf: 'PDF / Drucken',
         expWord: 'Word Redline',
         expHtml: 'HTML Diff-Report',
         expMd: 'Markdown Bericht',
+        revertBtn: 'Original',
+        revertTitle: 'Auf Original zurücksetzen (Cmd+Z für Rückgängig)',
+        editHint: 'Doppelklick zum direkten Bearbeiten',
         clearBtn: 'Leeren',
         clearBtnTitle: 'Alle Dokumente aus dem Arbeitsspeicher entfernen',
         themeTitle: 'Hell / Dunkel umschalten',
@@ -1609,10 +1685,15 @@ __DIFF_JS__
         textBtn: 'Text',
         textBtnTitle: 'Paste text directly',
         exportBtn: 'Export',
+        expCopy: 'Copy final text',
+        copiedLabel: '✓ Copied',
         expPdf: 'PDF / Print',
         expWord: 'Word Redline',
         expHtml: 'HTML Diff Report',
         expMd: 'Markdown Report',
+        revertBtn: 'Original',
+        revertTitle: 'Revert to original (Cmd+Z to undo)',
+        editHint: 'Double-click to edit directly',
         clearBtn: 'Clear',
         clearBtnTitle: 'Wipe all documents from memory',
         themeTitle: 'Toggle light / dark theme',
@@ -1882,6 +1963,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       onlyChanges: false,
       searchQuery: '',
       isProgrammaticScroll: false,
+      undoStack: [],
     };
 
     function t(key) {
@@ -1911,6 +1993,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       document.getElementById('i18n-btn-text').textContent = t('textBtn');
       document.getElementById('btn-paste-modal').title = t('textBtnTitle');
       document.getElementById('i18n-btn-export').textContent = t('exportBtn');
+      document.getElementById('i18n-exp-copy').textContent = t('expCopy');
       document.getElementById('i18n-exp-pdf').textContent = t('expPdf');
       document.getElementById('i18n-exp-word').textContent = t('expWord');
       document.getElementById('i18n-exp-html').textContent = t('expHtml');
@@ -2543,14 +2626,21 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       });
     }
 
+    function renderRevertButtonHtml(row) {
+      if (row.type === 'equal') return '';
+      return `<button type="button" class="clause-revert-btn" data-revert-row="${row.id}" title="${escapeHtml(t('revertTitle'))}">${escapeHtml(t('revertBtn'))}</button>`;
+    }
+
     function renderDocumentPanes() {
       const leftFragments = [];
       const rightFragments = [];
       const unifiedFragments = [];
       const q = state.searchQuery;
+      const editHintAttr = `title="${escapeHtml(t('editHint'))}"`;
 
       state.alignedRows.forEach((row, idx) => {
         const deferClass = idx > 14 ? 'deferred-block' : '';
+        const revertBtnHtml = renderRevertButtonHtml(row);
 
         if (row.leftBlock) {
           const headingClass = row.leftBlock.isHeading ? 'is-heading' : '';
@@ -2560,10 +2650,11 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
               : row.type === 'modified'
               ? 'state-modified'
               : 'state-deleted';
+          const leftRevert = row.type === 'deleted' ? revertBtnHtml : '';
 
           leftFragments.push(`
             <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-              <div class="clause ${stateClass} ${headingClass} ${deferClass}" data-row-id="${row.id}">${renderLeftBlockHtml(row, q)}</div>
+              <div class="clause ${stateClass} ${headingClass} ${deferClass}" data-row-id="${row.id}">${leftRevert}${renderLeftBlockHtml(row, q)}</div>
             </div>
           `);
         } else {
@@ -2585,13 +2676,13 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
           rightFragments.push(`
             <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-              <div class="clause ${stateClass} ${headingClass} ${deferClass}" data-row-id="${row.id}">${renderRightBlockHtml(row, q)}</div>
+              <div class="clause ${stateClass} ${headingClass} ${deferClass}" data-row-id="${row.id}" ${editHintAttr}>${revertBtnHtml}${renderRightBlockHtml(row, q)}</div>
             </div>
           `);
         } else {
           rightFragments.push(`
             <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-              <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}"></div>
+              <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}" ${editHintAttr}>${revertBtnHtml}</div>
             </div>
           `);
         }
@@ -2609,7 +2700,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
         unifiedFragments.push(`
           <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause ${uStateClass} ${uHeadingClass} ${deferClass}" data-row-id="${row.id}">${renderUnifiedBlockHtml(row, q)}</div>
+            <div class="clause ${uStateClass} ${uHeadingClass} ${deferClass}" data-row-id="${row.id}" ${editHintAttr}>${revertBtnHtml}${renderUnifiedBlockHtml(row, q)}</div>
           </div>
         `);
       });
@@ -2843,6 +2934,113 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       }, smooth ? 300 : 40);
     }
 
+    function pushUndoSnapshot() {
+      state.undoStack.push(state.rightText);
+      if (state.undoStack.length > 50) state.undoStack.shift();
+    }
+
+    function performUndo() {
+      if (!state.undoStack.length) return;
+      state.rightText = state.undoStack.pop();
+      runComparison();
+    }
+
+    function revertRowToOriginal(targetRowId) {
+      if (!state.alignedRows.length) return;
+      pushUndoSnapshot();
+      const nextBlocks = [];
+      for (const r of state.alignedRows) {
+        if (r.id === targetRowId) {
+          if (r.leftBlock) nextBlocks.push(r.leftBlock.text);
+        } else if (r.rightBlock) {
+          nextBlocks.push(r.rightBlock.text);
+        }
+      }
+      state.rightText = nextBlocks.join('\n\n');
+      runComparison();
+    }
+
+    function startInlineClauseEdit(clauseEl, rowId) {
+      if (!clauseEl || clauseEl.classList.contains('is-editing')) return;
+      const row = state.alignedRows.find(r => r.id === rowId);
+      if (!row) return;
+
+      const initialText = row.rightBlock
+        ? row.rightBlock.text
+        : row.leftBlock
+        ? row.leftBlock.text
+        : '';
+      const originalHtml = clauseEl.innerHTML;
+
+      clauseEl.classList.add('is-editing');
+      const editor = document.createElement('textarea');
+      editor.className = 'clause-inline-editor';
+      editor.value = initialText;
+      clauseEl.innerHTML = '';
+      clauseEl.appendChild(editor);
+
+      const autoSize = () => {
+        editor.style.height = 'auto';
+        editor.style.height = `${Math.max(32, editor.scrollHeight)}px`;
+        if (state.viewMode === 'split') equalizeRowHeights();
+        scheduleGutterDraw();
+      };
+      autoSize();
+      editor.addEventListener('input', autoSize);
+      editor.focus();
+      editor.setSelectionRange(editor.value.length, editor.value.length);
+
+      let finished = false;
+      const commit = () => {
+        if (finished) return;
+        finished = true;
+        const newText = editor.value.replace(/\r\n/g, '\n').trim();
+        const oldText = row.rightBlock ? row.rightBlock.text : '';
+        if (newText === oldText) {
+          clauseEl.classList.remove('is-editing');
+          clauseEl.innerHTML = originalHtml;
+          if (state.viewMode === 'split') equalizeRowHeights();
+          scheduleGutterDraw();
+          return;
+        }
+        pushUndoSnapshot();
+        const nextBlocks = [];
+        for (const r of state.alignedRows) {
+          if (r.id === rowId) {
+            if (newText) nextBlocks.push(newText);
+          } else if (r.rightBlock) {
+            nextBlocks.push(r.rightBlock.text);
+          }
+        }
+        state.rightText = nextBlocks.join('\n\n');
+        runComparison();
+      };
+
+      const cancel = () => {
+        if (finished) return;
+        finished = true;
+        clauseEl.classList.remove('is-editing');
+        clauseEl.innerHTML = originalHtml;
+        if (state.viewMode === 'split') equalizeRowHeights();
+        scheduleGutterDraw();
+      };
+
+      editor.addEventListener('keydown', ev => {
+        if (ev.key === 'Escape') {
+          ev.preventDefault();
+          ev.stopPropagation();
+          cancel();
+        } else if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey || !ev.shiftKey)) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          commit();
+        }
+      });
+      editor.addEventListener('blur', () => {
+        commit();
+      });
+    }
+
     [sheetLeft, sheetRight, sheetUnified, sidebarList].forEach(container => {
       container.addEventListener('mouseover', e => {
         const target = e.target.closest('[data-row-id]');
@@ -2850,6 +3048,13 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       });
       container.addEventListener('mouseleave', () => setHoveredRow(null));
       container.addEventListener('click', e => {
+        const revertBtn = e.target.closest('[data-revert-row]');
+        if (revertBtn) {
+          e.stopPropagation();
+          revertRowToOriginal(revertBtn.getAttribute('data-revert-row'));
+          return;
+        }
+        if (e.target.closest('.clause-inline-editor')) return;
         const target = e.target.closest('[data-row-id]');
         if (target) {
           selectAndScrollToRow(target.getAttribute('data-row-id'), true);
@@ -2857,6 +3062,16 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
             document.body.classList.add('sidebar-collapsed');
             document.getElementById('btn-toggle-sidebar').setAttribute('aria-pressed', 'false');
           }
+        }
+      });
+    });
+
+    [sheetRight, sheetUnified].forEach(editableSheet => {
+      editableSheet.addEventListener('dblclick', e => {
+        if (e.target.closest('[data-revert-row]') || e.target.closest('.clause-inline-editor')) return;
+        const clauseEl = e.target.closest('.clause[data-row-id]');
+        if (clauseEl) {
+          startInlineClauseEdit(clauseEl, clauseEl.getAttribute('data-row-id'));
         }
       });
     });
@@ -3010,6 +3225,48 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       return lines.join('\n');
     }
 
+    let copyLabelTimer = null;
+    function copyFinalTextToClipboard() {
+      const finalText = state.alignedRows
+        .filter(r => r.rightBlock)
+        .map(r => r.rightBlock.text)
+        .join('\n\n');
+
+      const flashCopied = () => {
+        const labelEl = document.getElementById('i18n-btn-export');
+        if (!labelEl) return;
+        labelEl.textContent = t('copiedLabel');
+        clearTimeout(copyLabelTimer);
+        copyLabelTimer = setTimeout(() => {
+          labelEl.textContent = t('exportBtn');
+        }, 1800);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(finalText).then(flashCopied).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = finalText;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          flashCopied();
+        });
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = finalText;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        flashCopied();
+      }
+    }
+
     function handleExportAction(type) {
       if (type === 'print') {
         window.print();
@@ -3024,6 +3281,10 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         state.rightFormat = 'DEMO';
         state.rightText = sample.v2;
         runComparison();
+      }
+      if (type === 'copy') {
+        copyFinalTextToClipboard();
+        return;
       }
       const baseName = `DocDiff_${(state.rightName || 'Comparison').replace(/\.[^.]+$/, '')}`;
       if (type === 'word') {
@@ -3204,6 +3465,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       state.rightText = '';
       state.rightName = '';
       state.rightFormat = '';
+      state.undoStack = [];
       fileInputRight.value = '';
       runComparison();
     });
@@ -3252,6 +3514,13 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         if (e.key === 'Escape') document.activeElement.blur();
         return;
       }
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+        if (state.undoStack.length > 0) {
+          e.preventDefault();
+          performUndo();
+        }
+        return;
+      }
       if (e.key === 'j' || e.key === 'J') {
         e.preventDefault();
         stepChange(1);
@@ -3296,6 +3565,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       state.activeRowId = null;
       state.hoveredRowId = null;
       state.searchQuery = '';
+      state.undoStack = [];
       searchInput.value = '';
       fileInputLeft.value = '';
       fileInputRight.value = '';

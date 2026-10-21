@@ -4,6 +4,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 
@@ -61,7 +62,21 @@ assert.ok(
 
 // Extract only our application script (last <script> block) to audit app code
 const lastScriptIdx = templateHtml.lastIndexOf('<script>');
+const lastScriptEndIdx = templateHtml.lastIndexOf('</script>');
 const appScript = templateHtml.slice(lastScriptIdx);
+const appJsCode = templateHtml.slice(lastScriptIdx + '<script>'.length, lastScriptEndIdx);
+
+// Compile JS syntax check via node:vm
+new vm.Script(appJsCode, { filename: 'src/template.html' });
+
+for (const requiredFn of [
+  'function revertRowToOriginal(',
+  'function startInlineClauseEdit(',
+  'function performUndo(',
+  'function copyFinalTextToClipboard(',
+]) {
+  assert.ok(appJsCode.includes(requiredFn), `Missing required function: ${requiredFn}`);
+}
 
 for (const forbiddenStorage of ['localStorage.', 'sessionStorage.', 'indexedDB.', 'document.cookie']) {
   assert.ok(
