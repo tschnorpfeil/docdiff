@@ -83,7 +83,7 @@ const enKeys = extractKeys(enMatch[1]);
 assert.deepEqual(deKeys, enKeys, 'German and English i18n keys must match 1:1');
 
 // 5. Verify site legal and domain files for docdiff.app
-for (const siteFile of ['CNAME', 'impressum.html', 'datenschutz.html', 'legal.css', 'robots.txt', 'sitemap.xml', '.nojekyll']) {
+for (const siteFile of ['CNAME', 'og-image.png', 'impressum.html', 'datenschutz.html', 'legal.css', 'robots.txt', 'sitemap.xml', '.nojekyll']) {
   const p = path.join(root, 'site', siteFile);
   assert.ok(fs.existsSync(p), `Missing required site file: site/${siteFile}`);
 }
