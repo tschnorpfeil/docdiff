@@ -189,6 +189,8 @@ for (const page of [
   assert.deepEqual(canonicals, [url], `${where}: canonical must be ${url}`);
   const alternates = Object.fromEntries([...head.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map(m => [m[1], m[2]]));
   assert.deepEqual(alternates, { de: SITE, en: `${SITE}en/`, 'x-default': SITE }, `${where}: hreflang alternates`);
+  assert.ok(head.includes('<link rel="alternate" type="text/plain" href="https://docdiff.app/llms.txt"'), `${where}: llms.txt alternate link missing`);
+  assert.ok(head.includes('<link rel="alternate" type="text/plain" href="https://docdiff.app/llms-full.txt"'), `${where}: llms-full.txt alternate link missing`);
   assert.equal(metaContent(head, 'property', 'og:url'), url, `${where}: og:url`);
   // Each language has its own link preview image.
   const ogImage = lang === 'en' ? `${SITE}og-image-en.png?v=1` : `${SITE}og-image.png?v=3`;
@@ -216,6 +218,7 @@ for (const page of [
   // The one exception is the tiny theme switch that sets dark mode before the first paint.
   const headScripts = head.match(/<script>[\s\S]*?<\/script>/g) || [];
   assert.ok(headScripts.length <= 1 && headScripts.every(s => s.length < 300), `${where}: only the small theme script may sit in <head>`);
+  assert.ok(!/<style[\s>]/.test(staticMarkup), `${where}: <style> elements must stay inside <head> (valid HTML5 and zero FOUT)`);
   assert.ok(firstScript > html.indexOf('id="faq-title"'), `${where}: scripts must follow the landing content`);
   assert.ok(html.indexOf('id="pdfjs-worker-source"') > bodyStart, `${where}: PDF.js worker source must be present`);
   // PDF.js and Mammoth are embedded but only started when a PDF or Word file is first read.
@@ -241,7 +244,8 @@ for (const page of [
   // Structured data: valid JSON-LD, app facts, and an FAQPage that matches the visible FAQ word for word
   const ldBlocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
   assert.equal(ldBlocks.length, 1, `${where}: exactly one JSON-LD block`);
-  assert.ok(ldBlocks[0].index < bodyStart, `${where}: JSON-LD belongs in <head>`);
+  assert.ok(ldBlocks[0].index < head.indexOf('<style>'), `${where}: JSON-LD and head metadata must come before inline <style>`);
+  assert.ok(head.indexOf('<style>') < 16000, `${where}: head metadata and JSON-LD must fit within the first 16 KB`);
   const ld = JSON.parse(ldBlocks[0][1]);
   const node = type => ld['@graph'].find(n => n['@type'] === type);
   const app = node('WebApplication');
@@ -250,13 +254,25 @@ for (const page of [
   assert.equal(app.offers.price, '0');
   assert.equal(app.isAccessibleForFree, true);
   assert.equal(app.operatingSystem, 'Any (web browser)');
+  assert.ok(app.featureList.includes(strings.scopeCan6), `${where}: WebApplication.featureList must include review and Word/PDF export`);
   assert.ok(/LICENSE$/.test(app.license) && app.sameAs.includes('https://github.com/tschnorpfeil/docdiff'));
   assert.ok(node('SoftwareSourceCode')?.codeRepository === 'https://github.com/tschnorpfeil/docdiff', `${where}: codeRepository`);
   const visibleFaq = [...staticMarkup.matchAll(/<details class="faq-item">\s*<summary[^>]*>([\s\S]*?)<\/summary>\s*<div class="faq-answer"[^>]*>([\s\S]*?)<\/div>\s*<\/details>/g)]
     .map(m => ({ q: plainText(m[1]), a: plainText(m[2]) }));
   const ldFaq = node('FAQPage').mainEntity.map(e => ({ q: e.name, a: e.acceptedAnswer.text }));
-  assert.ok(visibleFaq.length >= 3, `${where}: visible FAQ not found`);
+  assert.ok(visibleFaq.length >= 6, `${where}: visible FAQ count (${visibleFaq.length})`);
   assert.deepEqual(ldFaq, visibleFaq, `${where}: FAQPage JSON-LD must match the visible FAQ exactly`);
+  const altLang = lang === 'de' ? 'en' : 'de';
+  const altHref = lang === 'de' ? `${SITE}en/` : SITE;
+  assert.ok(
+    staticMarkup.includes(`id="footer-lang-link" href="${altHref}" hreflang="${altLang}"`),
+    `${where}: crawlable language link missing in footer`
+  );
+  assert.ok(
+    staticMarkup.includes('href="https://docdiff.app/impressum.html"') &&
+      staticMarkup.includes('href="https://docdiff.app/datenschutz.html"'),
+    `${where}: static HTML must include pre-rendered legal & privacy notice links`
+  );
 }
 
 // Crawl files

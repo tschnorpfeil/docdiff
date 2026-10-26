@@ -1,16 +1,16 @@
 # Doc Diff
 
-> Doc Diff is a free, open-source (MIT) web app that compares two versions of a document (PDF with a text layer, Word .docx, or plain text) and marks every changed word. It runs entirely in the browser: the files are not uploaded, and the page's Content Security Policy (`connect-src 'none'`) makes the browser block every network connection from the page. No account, no ads, no tracking, no cookies. The interface is in German and English.
+> Doc Diff is a free, open-source (MIT) web app that compares two versions of a document (PDF with a text layer, Word .docx, or plain text — including mixed formats such as PDF against Word) and marks every changed word. It runs entirely in the browser: the files are not uploaded, and the page's Content Security Policy (`connect-src 'none'`) makes the browser block every network connection from the page. No account, no ads, no tracking, no cookies. The interface is in German and English.
 
-Typical use: you have an old and a new version of a contract, tender, offer or other text and want to see exactly what changed, without sending the documents to a third-party server. Removed text is shown struck through in red, added text in green. The result can be exported as a Word .docx file with tracked changes, as PDF (print), as an HTML or Markdown report, or as plain text.
+Typical use: you have an old and a new version of a contract, tender, offer or other text and want to see exactly what changed, without sending confidential documents to a third-party server. Removed text is shown struck through in red, added text in green. You can accept or reject each change, edit paragraphs in place, and export the result as a clean final version or as a comparison with tracked changes — in the original Word `.docx` format when the new version is a `.docx` file, as PDF (print), as an HTML or Markdown report, or as plain text.
 
 Limits: no OCR (scanned PDFs without a text layer are rejected), no legacy .doc or .rtf, formatting (bold, fonts, table layout, images) is not compared, multi-column PDF layouts can come out in the wrong reading order, and a paragraph that was both moved and edited shows as a deletion plus an insertion. It is not a legal review tool.
 
 ## App
 
-- [Doc Diff, German page](https://docdiff.app/): the app; German is the default, the interface switches to English for English-language browsers and has a DE / EN toggle
+- [Doc Diff, German page](https://docdiff.app/): the app in German (default, with a DE / EN toggle and a link to the English page for English-language browsers)
 - [Doc Diff, English page](https://docdiff.app/en/): the same app, starting in English
-- [Offline version (DocDiff.html)](https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html): the whole app as a single HTML file of just under 3 MB; open it from disk, no installation and no internet needed
+- [Offline version (DocDiff.html)](https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html): the whole app as a single HTML file of just under 3 MB (switches between German and English by browser language); open it from disk, no installation and no internet needed
 
 ## Documentation
 

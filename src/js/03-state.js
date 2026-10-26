@@ -139,6 +139,13 @@ function applyTranslationsToStaticDom() {
   btnLang.textContent = t('langTarget');
   btnLang.setAttribute('lang', target);
   setTooltip(btnLang, t('langTitle'));
+  const footerLang = document.getElementById('footer-lang-link');
+  if (footerLang) {
+    footerLang.textContent = t('langTarget');
+    footerLang.setAttribute('lang', target);
+    footerLang.setAttribute('hreflang', target);
+    footerLang.setAttribute('href', target === 'en' ? 'https://docdiff.app/en/' : 'https://docdiff.app/');
+  }
   const menuLang = document.querySelector('#menu-lang [data-i18n="langMenu"]');
   if (menuLang) menuLang.setAttribute('lang', target);
   setTooltip(document.getElementById('btn-theme'), t('themeTitle'));

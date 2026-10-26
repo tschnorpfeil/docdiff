@@ -13,14 +13,14 @@ Plain facts about Doc Diff for people and AI assistants. Source: https://github.
 ## When to use it
 
 - You have an old and a new version of a contract, tender, offer, policy or other text and want to see exactly what changed.
-- You want to compare two PDFs, two Word files, or a PDF against a Word file, without sending them to an online service.
-- You want a Word file with the differences as tracked changes, to accept or reject them in Word or LibreOffice.
+- You want to compare two PDFs, two Word files, or a PDF against a Word file, without sending confidential documents to an online service.
+- You want a clean final Word file (.docx) or a Word file with the differences as tracked changes, in the original formatting of your .docx file, to keep working in Word or LibreOffice.
 
 ## Inputs
 
 - PDF with a text layer (text that can be selected and copied)
 - Word .docx
-- .html (text only), .md and plain text (UTF-8 or UTF-16)
+- .html (text only), .md and plain text (UTF-8 or UTF-16, with Windows-1252 fallback)
 - Pasted text
 - Any combination, e.g. PDF against DOCX
 
@@ -38,7 +38,10 @@ Plain facts about Doc Diff for people and AI assistants. Source: https://github.
 - Views: side by side or in one column (default on phones), with or without the original page breaks.
 - Removed text is struck through in red, added text is green. A list shows every change; J / K or the arrow buttons jump between changes, and a slim overview bar next to the text shows where the changes are.
 - Each change can be accepted (keep the new wording) or rejected (restore the old wording of that paragraph); both mark it as reviewed and move on to the next open change. The same header or footer change on several pages is one decision. Paragraphs of the new version can also be edited in place. Everything can be undone and redone.
-- Export: Word .docx in which open changes are tracked changes and accepted ones are applied; PDF via the browser's print dialog; self-contained HTML report and Markdown report, both with the review status of every change; the text of the new version as .txt or to the clipboard.
+- Export:
+  - Final version (the new version with all decisions and edits applied, without marks) as Word .docx (in the original format when the new version is a .docx file, keeping styles, numbering, links, footnotes, tables and images; otherwise newly typeset), as PDF, or as .txt / clipboard text
+  - Comparison (old to new with marks) as Word .docx in which open changes are tracked changes and accepted ones are applied (also in the original format when the new version is a .docx file), or as PDF side by side (landscape) or inline (portrait) via the browser's print dialog
+  - Self-contained HTML report and Markdown report, both with the review status of every change
 - Saved work: the current state (both documents, edits and review status) can be saved as a .docdiff file and opened again later.
 
 ## Limits
@@ -48,12 +51,12 @@ Plain facts about Doc Diff for people and AI assistants. Source: https://github.
 - Formatting is not compared. Bold, fonts, tables, images and layout are ignored; only the text is compared. Table cells come through as text in reading order.
 - Multi-column PDF layouts are read line by line and can come out in the wrong order.
 - Moves are only detected when the moved paragraph is identical. A paragraph that was moved and edited shows as one deletion and one insertion.
-- Large documents take time.
+- Large documents take time (two versions of a 10-page contract compare in well under a second; two 1,000-page PDFs take about 4 seconds in a background Web Worker).
 - It is not a legal review tool. It shows differences in the text; whether they matter is up to the reader.
 
 ## Privacy model
 
-- Files are read only into the memory of the browser tab and discarded when the tab is closed or reloaded.
+- Files are read only into the memory of the browser tab and discarded when the tab is closed or reloaded. That makes it suitable for confidential contracts and keeps data protection (GDPR) simple.
 - The page sets a Content Security Policy that forbids all network connections from the page (connect-src 'none', form-action 'none'). This is enforced by the browser.
 - All libraries (PDF.js, Mammoth.js, jsdiff) and fonts are inside the HTML file; nothing is loaded from other servers.
 - Nothing is stored in the browser: no localStorage, sessionStorage, IndexedDB or cookies.
@@ -81,8 +84,9 @@ Plain facts about Doc Diff for people and AI assistants. Source: https://github.
 - License: MIT (https://github.com/tschnorpfeil/docdiff/blob/main/LICENSE)
 - Source code: https://github.com/tschnorpfeil/docdiff
 - App: https://docdiff.app/ (German), https://docdiff.app/en/ (English)
+- Structured summary: https://docdiff.app/llms.txt
 - Offline file: https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html
 
 ## Kurzfassung (Deutsch)
 
-Doc Diff vergleicht zwei Fassungen eines Dokuments (PDF mit Textebene, Word .docx oder Text) und markiert jede Änderung Wort für Wort: Entferntes rot durchgestrichen, Neues grün. Es ist kostenlos, Open Source (MIT), ohne Konto, Werbung und Tracking. Alles läuft lokal im Browser; die Dateien werden nicht hochgeladen, und die Content-Security-Policy der Seite sperrt jede Netzwerkverbindung. Export als Word-Datei mit nachverfolgten Änderungen, als PDF oder als Bericht. Gescannte PDFs (ohne Texterkennung/OCR), alte .doc-Dateien und Formatierungsunterschiede werden nicht unterstützt. Adresse: https://docdiff.app/ (Deutsch), https://docdiff.app/en/ (Englisch).
+Doc Diff vergleicht zwei Fassungen eines Dokuments (PDF mit Textebene, Word .docx oder Text – auch gemischt, etwa PDF mit Word) und markiert jede Änderung Wort für Wort: Entferntes rot durchgestrichen, Neues grün. Es ist kostenlos, Open Source (MIT), ohne Konto, Werbung und Tracking. Alles läuft lokal im Browser; die Dateien werden nicht hochgeladen, und die Content-Security-Policy der Seite sperrt jede Netzwerkverbindung – geeignet für vertrauliche Verträge und einfachen Datenschutz (DSGVO). Jede Änderung lässt sich einzeln annehmen, ablehnen oder bearbeiten; Export als saubere Endfassung oder als Vergleich mit Änderungsverfolgung (bei einer .docx-Datei als neuer Fassung in deren Originalformat), als PDF oder als Bericht. Gescannte PDFs (ohne Texterkennung/OCR), alte .doc-Dateien und Formatierungsunterschiede werden nicht unterstützt. Adresse: https://docdiff.app/ (Deutsch), https://docdiff.app/en/ (Englisch).

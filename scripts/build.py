@@ -152,7 +152,11 @@ def json_ld(template: str, lang: str, strings: dict, version: str) -> str:
     """schema.org data for the app and the visible FAQ (same order and wording as the page)."""
     page = PAGES[lang]
     license_url = REPO_URL + "/blob/main/LICENSE"
-    author = {"@type": "Person", "name": "Tobias Schnorpfeil", "url": "https://github.com/tschnorpfeil"}
+    author = {
+        "@type": "Person",
+        "name": "Tobias Schnorpfeil",
+        "url": "https://github.com/tschnorpfeil",
+    }
     features = re.findall(r'data-i18n="(local\dTitle|scopeCan\d+)"', template)
     faq_keys = re.findall(r'<summary data-i18n="(faq\w+)Q"', template)
     app = {
@@ -216,6 +220,8 @@ def render_page(template: str, lang: str, i18n: dict, version: str) -> str:
         lambda m: html.escape(strings[m.group(1)], quote=True),
         out,
     )
+    alt_lang = "en" if lang == "de" else "de"
+    alt_href = (SITE_URL + "en/") if lang == "de" else SITE_URL
     out = (
         out.replace("__HTML_ATTRS__", page["html_attrs"])
         .replace("__PAGE_URL__", page["url"])
@@ -224,6 +230,8 @@ def render_page(template: str, lang: str, i18n: dict, version: str) -> str:
         .replace("__OG_LOCALE_ALT__", page["og_locale_alt"])
         .replace("__OG_IMAGE__", page["og_image"])
         .replace("__LANG_LABEL__", "English" if lang == "de" else "Deutsch")
+        .replace("__ALT_LANG__", alt_lang)
+        .replace("__ALT_LANG_HREF__", alt_href)
         .replace("__JSON_LD__", json_ld(template, lang, strings, version))
     )
     return out
@@ -252,7 +260,7 @@ def build_pages() -> dict:
     pages = {}
     for lang in PAGES:
         page_template = render_page(template, lang, i18n, version)
-        leftover = set(re.findall(r"__(?:HTML_ATTRS|PAGE_URL|ASSET_BASE|OG_LOCALE\w*|LANG_LABEL|JSON_LD|I18N:\w+)__", page_template))
+        leftover = set(re.findall(r"__(?:HTML_ATTRS|PAGE_URL|ASSET_BASE|OG_LOCALE\w*|LANG_LABEL|ALT_LANG\w*|JSON_LD|I18N:\w+)__", page_template))
         if leftover:
             sys.exit(f"Unreplaced page placeholders: {sorted(leftover)}")
         # App sources go in first so vendor code can never be scanned for placeholders.

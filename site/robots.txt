@@ -1,5 +1,6 @@
 # All crawlers are welcome, including search engines and AI assistants
 # (e.g. Googlebot, Bingbot, GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended).
+# AI/LLM plain-text summaries: https://docdiff.app/llms.txt and https://docdiff.app/llms-full.txt
 User-agent: *
 Allow: /
 

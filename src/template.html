@@ -37,6 +37,8 @@
   <link rel="alternate" hreflang="de" href="https://docdiff.app/" />
   <link rel="alternate" hreflang="en" href="https://docdiff.app/en/" />
   <link rel="alternate" hreflang="x-default" href="https://docdiff.app/" />
+  <link rel="alternate" type="text/plain" href="https://docdiff.app/llms.txt" title="LLMs.txt" />
+  <link rel="alternate" type="text/plain" href="https://docdiff.app/llms-full.txt" title="LLMs-full.txt" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='100 80 340 340' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='gp' x1='135' y1='115' x2='395' y2='395' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23ff3b30'/%3E%3Cstop offset='24%25' stop-color='%23ef4444'/%3E%3Cstop offset='50%25' stop-color='%232563eb'/%3E%3Cstop offset='68%25' stop-color='%230284c7'/%3E%3Cstop offset='88%25' stop-color='%2310b981'/%3E%3Cstop offset='100%25' stop-color='%2334c759'/%3E%3C/linearGradient%3E%3CradialGradient id='gr' cx='22%25' cy='18%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ff3b30'/%3E%3Cstop offset='100%25' stop-color='%23ff3b30' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='gb' cx='24%25' cy='80%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%231d4ed8' stop-opacity='0.95'/%3E%3Cstop offset='100%25' stop-color='%232563eb' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='gg' cx='84%25' cy='68%25' r='58%25'%3E%3Cstop offset='0%25' stop-color='%2330d158'/%3E%3Cstop offset='100%25' stop-color='%2310b981' stop-opacity='0'/%3E%3C/radialGradient%3E%3CclipPath id='dChip'%3E%3Cpath d='M 122 170 L 194 98 H 262 C 358 98 420 162 420 256 C 420 350 358 414 262 414 H 170 C 143.5 414 122 392.5 122 366 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23dChip)'%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gp)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gb)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gr)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gg)'/%3E%3C/g%3E%3C/svg%3E" />
   <link rel="icon" href="__ASSET_BASE__favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="__ASSET_BASE__apple-touch-icon.png" />
@@ -405,6 +407,7 @@ __APP_CSS__
                 <li data-i18n="scopeCan2">Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge</li>
                 <li data-i18n="scopeCan3">Seiten wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet</li>
                 <li data-i18n="scopeCan5">Verschobene Absätze als „verschoben“ kennzeichnen</li>
+                <li data-i18n="scopeCan6">Änderungen einzeln annehmen, ablehnen oder bearbeiten und als Word-Datei (.docx im Originalformat oder mit Änderungsverfolgung) oder PDF speichern</li>
                 <li data-i18n="scopeCan4">Ohne Internet arbeiten – als einzelne HTML-Datei</li>
               </ul>
             </div>
@@ -431,8 +434,12 @@ __APP_CSS__
           <details class="faq-item">
             <summary data-i18n="faqOfflineQ">Kann ich Doc Diff offline nutzen?</summary>
             <div class="faq-answer" data-i18n-html="faqOfflineA">
-              <p>Ja. Laden Sie <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> herunter (eine einzelne Datei, etwa 2,5&nbsp;MB) und öffnen Sie sie per Doppelklick im Browser – ohne Installation und ohne Internet.</p>
+              <p>Ja. Laden Sie <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> herunter (eine einzelne Datei, knapp 3&nbsp;MB) und öffnen Sie sie per Doppelklick im Browser – ohne Installation und ohne Internet.</p>
             </div>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faqMixedQ">Kann ich ein PDF direkt mit einer Word-Datei (.docx) vergleichen?</summary>
+            <div class="faq-answer" data-i18n-html="faqMixedA"></div>
           </details>
           <details class="faq-item">
             <summary data-i18n="faqScanQ">Kann ich gescannte PDFs vergleichen?</summary>
@@ -454,6 +461,8 @@ __APP_CSS__
           <button type="button" class="lp-link btn-open-privacy" data-i18n="footerPrivacy">Impressum &amp; Datenschutz</button>
           <span aria-hidden="true">·</span>
           <a class="lp-link" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" data-i18n="footerSource">Quellcode auf GitHub</a>
+          <span aria-hidden="true">·</span>
+          <a class="lp-link" id="footer-lang-link" href="__ALT_LANG_HREF__" hreflang="__ALT_LANG__" lang="__ALT_LANG__">__LANG_LABEL__</a>
           <span aria-hidden="true">·</span>
           <span data-i18n="footerLicense">MIT-Lizenz</span>
         </footer>
@@ -569,7 +578,7 @@ __APP_CSS__
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
-    <div class="dialog-body-single" id="i18n-privacy-body"></div>
+    <div class="dialog-body-single" id="i18n-privacy-body" data-i18n-html="privacyBodyHtml"></div>
     <div class="dialog-footer">
       <button type="button" class="btn btn-primary" id="btn-ok-privacy">OK</button>
     </div>

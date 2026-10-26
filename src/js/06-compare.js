@@ -268,11 +268,11 @@ function bindEmptyStateButtons() {
     btn.addEventListener('click', loadSampleComparison);
   });
 
-  // Start page: from the first screen on to what Doc Diff can and cannot do.
+  // Start page: from the first screen on to the next section below the fold.
   const more = document.getElementById('landing-more');
   if (more) {
     more.addEventListener('click', () => {
-      const next = document.getElementById('landing-scope');
+      const next = document.getElementById('landing-local') || document.getElementById('landing-scope');
       const pad = document.getElementById('empty-launchpad');
       const heading = next.querySelector('h2');
       heading.setAttribute('tabindex', '-1');

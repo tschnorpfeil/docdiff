@@ -37,6 +37,8 @@
   <link rel="alternate" hreflang="de" href="https://docdiff.app/" />
   <link rel="alternate" hreflang="en" href="https://docdiff.app/en/" />
   <link rel="alternate" hreflang="x-default" href="https://docdiff.app/" />
+  <link rel="alternate" type="text/plain" href="https://docdiff.app/llms.txt" title="LLMs.txt" />
+  <link rel="alternate" type="text/plain" href="https://docdiff.app/llms-full.txt" title="LLMs-full.txt" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='100 80 340 340' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='gp' x1='135' y1='115' x2='395' y2='395' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23ff3b30'/%3E%3Cstop offset='24%25' stop-color='%23ef4444'/%3E%3Cstop offset='50%25' stop-color='%232563eb'/%3E%3Cstop offset='68%25' stop-color='%230284c7'/%3E%3Cstop offset='88%25' stop-color='%2310b981'/%3E%3Cstop offset='100%25' stop-color='%2334c759'/%3E%3C/linearGradient%3E%3CradialGradient id='gr' cx='22%25' cy='18%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ff3b30'/%3E%3Cstop offset='100%25' stop-color='%23ff3b30' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='gb' cx='24%25' cy='80%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%231d4ed8' stop-opacity='0.95'/%3E%3Cstop offset='100%25' stop-color='%232563eb' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='gg' cx='84%25' cy='68%25' r='58%25'%3E%3Cstop offset='0%25' stop-color='%2330d158'/%3E%3Cstop offset='100%25' stop-color='%2310b981' stop-opacity='0'/%3E%3C/radialGradient%3E%3CclipPath id='dChip'%3E%3Cpath d='M 122 170 L 194 98 H 262 C 358 98 420 162 420 256 C 420 350 358 414 262 414 H 170 C 143.5 414 122 392.5 122 366 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23dChip)'%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gp)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gb)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gr)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gg)'/%3E%3C/g%3E%3C/svg%3E" />
   <link rel="icon" href="favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -93,6 +95,7 @@
         "Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge",
         "Seitenumbrüche wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet",
         "Verschobene Absätze als „verschoben“ kennzeichnen",
+        "Änderungen einzeln annehmen, ablehnen oder bearbeiten und als Word-Datei (.docx im Originalformat oder mit Änderungsverfolgung) oder PDF speichern",
         "Ohne Internet arbeiten – als einzelne HTML-Datei"
       ],
       "downloadUrl": "https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html",
@@ -109,7 +112,7 @@
       "sameAs": [
         "https://github.com/tschnorpfeil/docdiff"
       ],
-      "softwareVersion": "1.6.4"
+      "softwareVersion": "1.6.5"
     },
     {
       "@type": "SoftwareSourceCode",
@@ -150,6 +153,14 @@
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Ja. Laden Sie DocDiff.html herunter (eine einzelne Datei, knapp 3 MB) und öffnen Sie sie per Doppelklick im Browser – ohne Installation und ohne Internet."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Kann ich ein PDF direkt mit einer Word-Datei (.docx) vergleichen?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ja. Alte und neue Fassung müssen nicht dasselbe Format haben: Sie können z. B. ein zurückgesendetes PDF direkt mit Ihrem eigenen Word-Entwurf (.docx) oder mit eingefügtem Text vergleichen. Wiederkehrende Kopf- und Fußzeilen sowie Seitenzahlen des PDFs werden automatisch ausgeblendet, damit sie nicht auf jeder Seite als Änderung erscheinen."
           }
         },
         {
@@ -3977,6 +3988,7 @@ body.list-open .toast-region {
                 <li data-i18n="scopeCan2">Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge</li>
                 <li data-i18n="scopeCan3">Seitenumbrüche wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet</li>
                 <li data-i18n="scopeCan5">Verschobene Absätze als „verschoben“ kennzeichnen</li>
+                <li data-i18n="scopeCan6">Änderungen einzeln annehmen, ablehnen oder bearbeiten und als Word-Datei (.docx im Originalformat oder mit Änderungsverfolgung) oder PDF speichern</li>
                 <li data-i18n="scopeCan4">Ohne Internet arbeiten – als einzelne HTML-Datei</li>
               </ul>
             </div>
@@ -4007,6 +4019,12 @@ body.list-open .toast-region {
             </div>
           </details>
           <details class="faq-item">
+            <summary data-i18n="faqMixedQ">Kann ich ein PDF direkt mit einer Word-Datei (.docx) vergleichen?</summary>
+            <div class="faq-answer" data-i18n-html="faqMixedA">
+              <p>Ja. Alte und neue Fassung müssen nicht dasselbe Format haben: Sie können z.&nbsp;B. ein zurückgesendetes PDF direkt mit Ihrem eigenen Word-Entwurf (.docx) oder mit eingefügtem Text vergleichen. Wiederkehrende Kopf- und Fußzeilen sowie Seitenzahlen des PDFs werden automatisch ausgeblendet, damit sie nicht auf jeder Seite als Änderung erscheinen.</p>
+            </div>
+          </details>
+          <details class="faq-item">
             <summary data-i18n="faqScanQ">Kann ich gescannte PDFs vergleichen?</summary>
             <div class="faq-answer" data-i18n-html="faqScanA">
               <p>Nein. Doc Diff liest nur PDFs mit Textebene, also PDFs, in denen Sie Text markieren und kopieren können. Ein Scan ist ein Bild der Seite, und eine Texterkennung (OCR) ist nicht eingebaut. Solche Dateien werden mit einem Hinweis abgelehnt. Wandeln Sie den Scan vorher mit einem OCR-Programm in ein durchsuchbares PDF um.</p>
@@ -4030,6 +4048,8 @@ body.list-open .toast-region {
           <button type="button" class="lp-link btn-open-privacy" data-i18n="footerPrivacy">Impressum &amp; Datenschutz</button>
           <span aria-hidden="true">·</span>
           <a class="lp-link" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" data-i18n="footerSource">Quellcode auf GitHub</a>
+          <span aria-hidden="true">·</span>
+          <a class="lp-link" id="footer-lang-link" href="https://docdiff.app/en/" hreflang="en" lang="en">English</a>
           <span aria-hidden="true">·</span>
           <span data-i18n="footerLicense">MIT-Lizenz</span>
         </footer>
@@ -4145,7 +4165,11 @@ body.list-open .toast-region {
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
-    <div class="dialog-body-single" id="i18n-privacy-body"></div>
+    <div class="dialog-body-single" id="i18n-privacy-body" data-i18n-html="privacyBodyHtml">
+      <p><strong>Impressum (§ 5 DDG):</strong><br/>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden · <a href="mailto:tschnorpfeil@gmail.com">tschnorpfeil@gmail.com</a></p>
+      <p><strong>Datenschutz:</strong><br/>Alle Dateien und Texte werden ausschließlich lokal im Arbeitsspeicher Ihres Browsers verarbeitet. Es werden keine Dokumente hochgeladen, keine Cookies gesetzt und keine Tracker genutzt. Beim Aufruf über <code>docdiff.app</code> werden technisch notwendige Verbindungsdaten durch GitHub Pages (GitHub, Inc., USA) und Cloudflare DNS verarbeitet (Art. 6 Abs. 1 lit. f DSGVO).</p>
+      <p><a href="https://docdiff.app/impressum.html">Impressum</a> · <a href="https://docdiff.app/datenschutz.html">Datenschutz</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
     <div class="dialog-footer">
       <button type="button" class="btn btn-primary" id="btn-ok-privacy">OK</button>
     </div>
@@ -4628,11 +4652,16 @@ const I18N = {
     scopeCannot2: 'Alte Word-Dateien (.doc) öffnen – bitte vorher als .docx speichern',
     scopeCannot3: 'Formatierung vergleichen – Fett, Kursiv, Tabellenlayout und Bilder werden ignoriert, verglichen wird nur der Text',
     scopeCan5: 'Verschobene Absätze als „verschoben“ kennzeichnen',
+    scopeCan6: 'Änderungen einzeln annehmen, ablehnen oder bearbeiten und als Word-Datei (.docx im Originalformat oder mit Änderungsverfolgung) oder PDF speichern',
     faqTitle: 'Häufige Fragen',
     faqUploadQ: 'Wie kann ich prüfen, dass nichts hochgeladen wird?',
     faqUploadA: `
               <p>Die Seite enthält eine Sicherheitsregel (Content-Security-Policy), mit der Ihr Browser jede Netzwerkverbindung aus der Seite heraus sperrt. Ihre Dateien werden nur im Arbeitsspeicher dieses Tabs gelesen und beim Schließen verworfen.</p>
               <p>So prüfen Sie es selbst: Öffnen Sie die Entwicklerwerkzeuge Ihres Browsers (F12), wählen Sie den Reiter „Netzwerk“ und laden Sie dann ein Dokument – es erscheint keine Anfrage. Oder laden Sie die Offline-Datei herunter, trennen Sie die Internetverbindung und öffnen Sie sie: Alles funktioniert weiter.</p>
+            `,
+    faqMixedQ: 'Kann ich ein PDF direkt mit einer Word-Datei (.docx) vergleichen?',
+    faqMixedA: `
+              <p>Ja. Alte und neue Fassung müssen nicht dasselbe Format haben: Sie können z.&nbsp;B. ein zurückgesendetes PDF direkt mit Ihrem eigenen Word-Entwurf (.docx) oder mit eingefügtem Text vergleichen. Wiederkehrende Kopf- und Fußzeilen sowie Seitenzahlen des PDFs werden automatisch ausgeblendet, damit sie nicht auf jeder Seite als Änderung erscheinen.</p>
             `,
     faqOfflineQ: 'Kann ich Doc Diff offline nutzen?',
     faqOfflineA: `
@@ -5036,11 +5065,16 @@ const I18N = {
     scopeCannot2: 'Open old Word files (.doc) – please save them as .docx first',
     scopeCannot3: 'Compare formatting – bold, italics, table layout and images are ignored; only the text is compared',
     scopeCan5: 'Mark moved paragraphs as “moved”',
+    scopeCan6: 'Accept, reject or edit changes one by one and save as a Word file (.docx in the original format or with tracked changes) or PDF',
     faqTitle: 'Frequently asked questions',
     faqUploadQ: 'How can I check that nothing is uploaded?',
     faqUploadA: `
               <p>The page contains a security rule (Content Security Policy) that makes your browser block every network connection from the page. Your files are only read into this tab’s memory and discarded when you close it.</p>
               <p>To check it yourself: open your browser’s developer tools (F12), switch to the “Network” tab and then load a document – no request appears. Or download the offline file, disconnect from the internet and open it: everything keeps working.</p>
+            `,
+    faqMixedQ: 'Can I compare a PDF directly with a Word (.docx) file?',
+    faqMixedA: `
+              <p>Yes. The old and the new version do not have to be in the same format: for example, you can compare a PDF returned by the other side directly with your own Word draft (.docx) or with pasted text. Repeating headers, footers and page numbers from the PDF are hidden automatically so they do not show up as changes on every page.</p>
             `,
     faqOfflineQ: 'Can I use Doc Diff offline?',
     faqOfflineA: `
@@ -5505,6 +5539,13 @@ function applyTranslationsToStaticDom() {
   btnLang.textContent = t('langTarget');
   btnLang.setAttribute('lang', target);
   setTooltip(btnLang, t('langTitle'));
+  const footerLang = document.getElementById('footer-lang-link');
+  if (footerLang) {
+    footerLang.textContent = t('langTarget');
+    footerLang.setAttribute('lang', target);
+    footerLang.setAttribute('hreflang', target);
+    footerLang.setAttribute('href', target === 'en' ? 'https://docdiff.app/en/' : 'https://docdiff.app/');
+  }
   const menuLang = document.querySelector('#menu-lang [data-i18n="langMenu"]');
   if (menuLang) menuLang.setAttribute('lang', target);
   setTooltip(document.getElementById('btn-theme'), t('themeTitle'));
@@ -7923,11 +7964,11 @@ function bindEmptyStateButtons() {
     btn.addEventListener('click', loadSampleComparison);
   });
 
-  // Start page: from the first screen on to what Doc Diff can and cannot do.
+  // Start page: from the first screen on to the next section below the fold.
   const more = document.getElementById('landing-more');
   if (more) {
     more.addEventListener('click', () => {
-      const next = document.getElementById('landing-scope');
+      const next = document.getElementById('landing-local') || document.getElementById('landing-scope');
       const pad = document.getElementById('empty-launchpad');
       const heading = next.querySelector('h2');
       heading.setAttribute('tabindex', '-1');
@@ -14392,6 +14433,15 @@ function toggleLanguage() {
   runComparison();
 }
 document.getElementById('btn-lang').addEventListener('click', toggleLanguage);
+const footerLangLink = document.getElementById('footer-lang-link');
+if (footerLangLink) {
+  footerLangLink.addEventListener('click', e => {
+    if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      toggleLanguage();
+    }
+  });
+}
 
 function applyTheme() {
   const systemDark = Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -14735,7 +14785,7 @@ window.addEventListener('DOMContentLoaded', () => {
  * entry; version 1 files (no review status) still open.
  */
 
-const DOCDIFF_APP_VERSION = '1.6.4';
+const DOCDIFF_APP_VERSION = '1.6.5';
 const SESSION_FORMAT_ID = 'docdiff-session';
 const SESSION_FORMAT_VERSION = 2;
 const SESSION_FILE_EXT = '.docdiff';
@@ -14984,7 +15034,7 @@ const SESSION_GUARDED_CLICKS = [
   },
   {
     // Toggling the language while the sample is shown reloads the sample.
-    selector: '#btn-lang, #menu-lang',
+    selector: '#btn-lang, #menu-lang, #footer-lang-link',
     when: () => state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO',
   },
 ];

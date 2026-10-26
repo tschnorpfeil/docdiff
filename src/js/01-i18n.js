@@ -380,11 +380,16 @@ const I18N = {
     scopeCannot2: 'Alte Word-Dateien (.doc) öffnen – bitte vorher als .docx speichern',
     scopeCannot3: 'Formatierung vergleichen – Fett, Kursiv, Tabellenlayout und Bilder werden ignoriert, verglichen wird nur der Text',
     scopeCan5: 'Verschobene Absätze als „verschoben“ kennzeichnen',
+    scopeCan6: 'Änderungen einzeln annehmen, ablehnen oder bearbeiten und als Word-Datei (.docx im Originalformat oder mit Änderungsverfolgung) oder PDF speichern',
     faqTitle: 'Häufige Fragen',
     faqUploadQ: 'Wie kann ich prüfen, dass nichts hochgeladen wird?',
     faqUploadA: `
               <p>Die Seite enthält eine Sicherheitsregel (Content-Security-Policy), mit der Ihr Browser jede Netzwerkverbindung aus der Seite heraus sperrt. Ihre Dateien werden nur im Arbeitsspeicher dieses Tabs gelesen und beim Schließen verworfen.</p>
               <p>So prüfen Sie es selbst: Öffnen Sie die Entwicklerwerkzeuge Ihres Browsers (F12), wählen Sie den Reiter „Netzwerk“ und laden Sie dann ein Dokument – es erscheint keine Anfrage. Oder laden Sie die Offline-Datei herunter, trennen Sie die Internetverbindung und öffnen Sie sie: Alles funktioniert weiter.</p>
+            `,
+    faqMixedQ: 'Kann ich ein PDF direkt mit einer Word-Datei (.docx) vergleichen?',
+    faqMixedA: `
+              <p>Ja. Alte und neue Fassung müssen nicht dasselbe Format haben: Sie können z.&nbsp;B. ein zurückgesendetes PDF direkt mit Ihrem eigenen Word-Entwurf (.docx) oder mit eingefügtem Text vergleichen. Wiederkehrende Kopf- und Fußzeilen sowie Seitenzahlen des PDFs werden automatisch ausgeblendet, damit sie nicht auf jeder Seite als Änderung erscheinen.</p>
             `,
     faqOfflineQ: 'Kann ich Doc Diff offline nutzen?',
     faqOfflineA: `
@@ -788,11 +793,16 @@ const I18N = {
     scopeCannot2: 'Open old Word files (.doc) – please save them as .docx first',
     scopeCannot3: 'Compare formatting – bold, italics, table layout and images are ignored; only the text is compared',
     scopeCan5: 'Mark moved paragraphs as “moved”',
+    scopeCan6: 'Accept, reject or edit changes one by one and save as a Word file (.docx in the original format or with tracked changes) or PDF',
     faqTitle: 'Frequently asked questions',
     faqUploadQ: 'How can I check that nothing is uploaded?',
     faqUploadA: `
               <p>The page contains a security rule (Content Security Policy) that makes your browser block every network connection from the page. Your files are only read into this tab’s memory and discarded when you close it.</p>
               <p>To check it yourself: open your browser’s developer tools (F12), switch to the “Network” tab and then load a document – no request appears. Or download the offline file, disconnect from the internet and open it: everything keeps working.</p>
+            `,
+    faqMixedQ: 'Can I compare a PDF directly with a Word (.docx) file?',
+    faqMixedA: `
+              <p>Yes. The old and the new version do not have to be in the same format: for example, you can compare a PDF returned by the other side directly with your own Word draft (.docx) or with pasted text. Repeating headers, footers and page numbers from the PDF are hidden automatically so they do not show up as changes on every page.</p>
             `,
     faqOfflineQ: 'Can I use Doc Diff offline?',
     faqOfflineA: `

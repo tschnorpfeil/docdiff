@@ -578,6 +578,15 @@ function toggleLanguage() {
   runComparison();
 }
 document.getElementById('btn-lang').addEventListener('click', toggleLanguage);
+const footerLangLink = document.getElementById('footer-lang-link');
+if (footerLangLink) {
+  footerLangLink.addEventListener('click', e => {
+    if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      toggleLanguage();
+    }
+  });
+}
 
 function applyTheme() {
   const systemDark = Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);

@@ -62,10 +62,9 @@ It was written with German contracts in mind (`§ 1`, `(1)`, `1.1` clause number
 - **Views:** side by side or one column (default on phones), with or without the original page breaks. An overview bar between the two versions (next to the text in one column) shows where the changes are; click it to jump.
 - **Review:** accept a change (keep the new wording) or reject it (restore the old wording of that paragraph) with the small ✓ / ✗ buttons next to the current paragraph or `A` / `R`; both mark it as reviewed, move on to the next open change and leave a quiet ✓ or ✗ in the margin, with an undo arrow below it. The same header or footer change on several pages is one decision. The list of changes can be filtered by review status or by kind of change. Paragraphs of the new version can also be edited in place.
 - **Export:**
-  - Word `.docx` in which open changes are tracked changes (accept or reject them in Word or LibreOffice) and changes accepted in Doc Diff are already applied
-  - PDF via the browser's print dialog
-  - HTML report (self-contained, read-only) and Markdown, both with the review status of every change
-  - the final text as `.txt` or to the clipboard
+  - **Final version** (the new version with your decisions and edits applied, without marks) as a Word `.docx` file — in the original format when the new version is a `.docx` file (keeping styles, numbering, links, footnotes, tables and images) — or as PDF or plain text (`.txt` / clipboard)
+  - **Comparison** (old → new with marks) as a Word `.docx` file in which open changes are tracked changes (accept or reject them in Word or LibreOffice) and accepted changes are already applied — also in the original format when the new version is a `.docx` file — or as PDF side by side or inline
+  - HTML report (self-contained, read-only) and Markdown report, both with the review status of every change
 - **Saved work:** you can save the current state (both documents, your edits and the review status) as a `.docdiff` file and open it again later. The browser asks before you leave the page with unsaved work.
 
 ## What it does not do

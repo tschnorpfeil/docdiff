@@ -1,13 +1,13 @@
 {
   "name": "Doc Diff",
   "short_name": "DocDiff",
-  "description": "Compare two versions of a document (PDF, Word .docx or text) word by word in the browser. Files are not uploaded.",
+  "description": "Zwei Vertragsfassungen vergleichen, Wort für Wort markiert: PDF, Word oder Text. Läuft lokal im Browser, ohne Upload, auch offline. Kostenlos, Open Source.",
   "lang": "de",
   "id": "/",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#090a0f",
-  "theme_color": "#090a0f",
+  "background_color": "#060606",
+  "theme_color": "#060606",
   "icons": [
     {
       "src": "/icon-192.png",
