@@ -107,6 +107,9 @@ async function extractPdfText(arrayBuffer) {
 // Validate the entire archive with the bounded reader before Mammoth decompresses it.
 // Returning null on a budget failure would let the unbounded fallback run anyway.
 async function readZipTextEntries(arrayBuffer, wantedNames) {
+  // Without DecompressionStream (older browsers) the bounded reader cannot inflate anything;
+  // let Mammoth import the text and skip only the extra parts, as before.
+  if (typeof DecompressionStream === 'undefined') return null;
   try {
     const entries = await readZipEntries(arrayBuffer);
     const utf8 = new TextDecoder('utf-8');

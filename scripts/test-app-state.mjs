@@ -199,6 +199,7 @@ let groups = 0;
   vm.runInContext('var t = key => key; var formatMsg = k => k; function getDisplayRef(row) { const b = row.rightBlock || row.leftBlock; return (b && b.refCode) || ""; }', ctx);
   for (const f of ['02-samples.js', '04-core.js', '04a-align.js']) vm.runInContext(read(f), ctx, { filename: f });
   vm.runInContext(review, ctx, { filename: '06d-review.js' });
+  vm.runInContext(`const ghostDiffCache = new WeakMap();\n${extractFunction(read('06-compare.js'), 'getItemWordDiffs')}`, ctx);
   vm.runInContext(
     `${['rebuildRightTextFromRows', 'sameBlock', 'makeHistorySnapshot', 'restoreHistorySnapshot', 'pushUndoSnapshot', 'performUndo', 'performRedo']
       .map(n => extractFunction(interactions, n))
@@ -356,7 +357,11 @@ let groups = 0;
   const ctx = {};
   vm.createContext(ctx);
   vm.runInContext(extractFunction(read('06d-review.js'), 'headerFooterGroupKey'), ctx);
+  // Stand-in for getItemWordDiffs: a rejected entry recomputes its tokens from the texts.
+  ctx.ghostDiffs = null;
+  vm.runInContext('function getItemWordDiffs(item) { return item.ghost ? ghostDiffs : item.row.wordDiffs || []; }', ctx);
   const key = (left, right, diffs, ghost = false) => {
+    ctx.ghostDiffs = ghost ? diffs || [] : null;
     ctx.item = { type: 'modified', status: ghost ? 'rejected' : 'open',
       ghost: ghost ? { leftText: left, rightText: right } : null,
       row: { leftBlock: { text: left }, rightBlock: { text: right }, wordDiffs: diffs } };
@@ -366,6 +371,10 @@ let groups = 0;
   assert.equal(key('Page 1 total 100', 'Page 1 total 200', tokens(200)), key('Page 2 total 100', 'Page 2 total 200', tokens(200)));
   assert.notEqual(key('Total 100', 'Total 200', tokens(200)), key('Total 100', 'Total 300', tokens(300)));
   for (const ghost of [true, false]) assert.notEqual(key('Total 100', 'Total 200', undefined, ghost), key('Total 100', 'Total 300', undefined, ghost));
+  // A rejected group whose pages differ only in the page number stays one entry.
+  const draft = [{ removed: true, value: 'Draft' }, { added: true, value: 'Final' }];
+  assert.equal(key('Page 1 of 10 Draft', 'Page 1 of 10 Final', draft, true), key('Page 2 of 10 Draft', 'Page 2 of 10 Final', draft, true));
+  assert.notEqual(key('Total 100', 'Total 200', tokens(200), true), key('Total 100', 'Total 300', tokens(300), true));
   groups++;
 }
 
@@ -429,7 +438,9 @@ let groups = 0;
   for (const [dirty, allow] of [[false, true], [true, true], [true, false]]) {
     let wrapped, calls = 0, prompts = 0;
     const tracker = { bypassGuard: 0 };
+    const inputs = { 'file-input-left': { value: 'C:\\fakepath\\a.docx' }, 'file-input-right': { value: 'C:\\fakepath\\b.docx' } };
     const ctx = { sessionTracker: tracker, isSessionDirty: () => dirty,
+      document: { getElementById: id => inputs[id] || null },
       confirmDiscardEdits: async () => { prompts++; return allow; },
       wrapGlobalFunction: (_, factory) => { wrapped = factory(async files => {
         calls++;
@@ -442,6 +453,10 @@ let groups = 0;
     assert.equal(prompts, dirty ? 1 : 0);
     assert.equal(calls, !dirty || allow ? 1 : 0);
     assert.equal(tracker.bypassGuard, 0, 'guard restored');
+    // Cancelling clears both pickers so the same file can be chosen again.
+    const cleared = dirty && !allow;
+    assert.equal(inputs['file-input-left'].value === '', cleared);
+    assert.equal(inputs['file-input-right'].value === '', cleared);
   }
   groups++;
 }

@@ -16,7 +16,7 @@
  * entry; version 1 files (no review status) still open.
  */
 
-const DOCDIFF_APP_VERSION = '1.6.5';
+const DOCDIFF_APP_VERSION = '1.7.0';
 const SESSION_FORMAT_ID = 'docdiff-session';
 const SESSION_FORMAT_VERSION = 2;
 const SESSION_FILE_EXT = '.docdiff';
@@ -138,7 +138,14 @@ wrapGlobalFunction('handleDropFiles', original =>
       // Keep the pair under one guard even when it starts clean: replacing the left
       // side can reset reviews and otherwise cause a second prompt halfway through.
       const pickedFiles = Array.from(files);
-      if (isSessionDirty() && !(await confirmDiscardEdits())) return undefined;
+      if (isSessionDirty() && !(await confirmDiscardEdits())) {
+        // Clear the pickers so choosing the same file again still fires a change event.
+        for (const side of ['left', 'right']) {
+          const input = document.getElementById(`file-input-${side}`);
+          if (input) input.value = '';
+        }
+        return undefined;
+      }
       sessionTracker.bypassGuard++;
       try {
         return await original.call(this, pickedFiles, targetSide);

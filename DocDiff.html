@@ -109,7 +109,7 @@
       "sameAs": [
         "https://github.com/tschnorpfeil/docdiff"
       ],
-      "softwareVersion": "1.6.5"
+      "softwareVersion": "1.7.0"
     },
     {
       "@type": "SoftwareSourceCode",
@@ -9506,25 +9506,21 @@ function isHeaderFooterItem(item) {
 }
 
 // Running headers and footers repeat on every page with the page number in them: the same
-// change on several pages is one decision. Normalize digits only when exact changed tokens
-// are available; rejected entries lack those tokens and must retain their substantive numbers.
+// change on several pages is one decision. Digits in the surrounding text are ignored, but the
+// changed words themselves (numbers included) must be identical. Rejected entries recompute
+// their changed words from the rejected text so a rejected group stays one entry.
 function headerFooterGroupKey(item) {
   if (item.type !== 'modified') return '';
-  const hasTokens = !item.ghost && Array.isArray(item.row.wordDiffs) &&
-    item.row.wordDiffs.some(d => d.added || d.removed);
+  const diffs = getItemWordDiffs(item);
+  const changedParts = Array.isArray(diffs) ? diffs.filter(d => d.added || d.removed) : [];
+  const hasTokens = changedParts.length > 0;
   const norm = s => {
     const text = String(s || '');
     return (hasTokens ? text.replace(/\d+/g, '#') : text).replace(/\s+/g, ' ').trim();
   };
   const left = item.ghost ? item.ghost.leftText : item.row.leftBlock ? item.row.leftBlock.text : '';
   const right = item.ghost ? item.ghost.rightText : item.row.rightBlock ? item.row.rightBlock.text : '';
-  let changed = '';
-  if (!item.ghost && Array.isArray(item.row.wordDiffs)) {
-    changed = item.row.wordDiffs
-      .filter(d => d.added || d.removed)
-      .map(d => (d.added ? '+' : '-') + d.value)
-      .join('\u0001');
-  }
+  const changed = changedParts.map(d => (d.added ? '+' : '-') + d.value).join('\u0001');
   return [item.status, item.ghost ? 'g' : 'l', norm(left), norm(right), changed].join('\u0000');
 }
 
@@ -13270,6 +13266,9 @@ async function extractPdfText(arrayBuffer) {
 // Validate the entire archive with the bounded reader before Mammoth decompresses it.
 // Returning null on a budget failure would let the unbounded fallback run anyway.
 async function readZipTextEntries(arrayBuffer, wantedNames) {
+  // Without DecompressionStream (older browsers) the bounded reader cannot inflate anything;
+  // let Mammoth import the text and skip only the extra parts, as before.
+  if (typeof DecompressionStream === 'undefined') return null;
   try {
     const entries = await readZipEntries(arrayBuffer);
     const utf8 = new TextDecoder('utf-8');
@@ -14911,7 +14910,7 @@ window.addEventListener('DOMContentLoaded', () => {
  * entry; version 1 files (no review status) still open.
  */
 
-const DOCDIFF_APP_VERSION = '1.6.5';
+const DOCDIFF_APP_VERSION = '1.7.0';
 const SESSION_FORMAT_ID = 'docdiff-session';
 const SESSION_FORMAT_VERSION = 2;
 const SESSION_FILE_EXT = '.docdiff';
@@ -15033,7 +15032,14 @@ wrapGlobalFunction('handleDropFiles', original =>
       // Keep the pair under one guard even when it starts clean: replacing the left
       // side can reset reviews and otherwise cause a second prompt halfway through.
       const pickedFiles = Array.from(files);
-      if (isSessionDirty() && !(await confirmDiscardEdits())) return undefined;
+      if (isSessionDirty() && !(await confirmDiscardEdits())) {
+        // Clear the pickers so choosing the same file again still fires a change event.
+        for (const side of ['left', 'right']) {
+          const input = document.getElementById(`file-input-${side}`);
+          if (input) input.value = '';
+        }
+        return undefined;
+      }
       sessionTracker.bypassGuard++;
       try {
         return await original.call(this, pickedFiles, targetSide);

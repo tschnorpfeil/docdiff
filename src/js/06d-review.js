@@ -134,25 +134,21 @@ function isHeaderFooterItem(item) {
 }
 
 // Running headers and footers repeat on every page with the page number in them: the same
-// change on several pages is one decision. Normalize digits only when exact changed tokens
-// are available; rejected entries lack those tokens and must retain their substantive numbers.
+// change on several pages is one decision. Digits in the surrounding text are ignored, but the
+// changed words themselves (numbers included) must be identical. Rejected entries recompute
+// their changed words from the rejected text so a rejected group stays one entry.
 function headerFooterGroupKey(item) {
   if (item.type !== 'modified') return '';
-  const hasTokens = !item.ghost && Array.isArray(item.row.wordDiffs) &&
-    item.row.wordDiffs.some(d => d.added || d.removed);
+  const diffs = getItemWordDiffs(item);
+  const changedParts = Array.isArray(diffs) ? diffs.filter(d => d.added || d.removed) : [];
+  const hasTokens = changedParts.length > 0;
   const norm = s => {
     const text = String(s || '');
     return (hasTokens ? text.replace(/\d+/g, '#') : text).replace(/\s+/g, ' ').trim();
   };
   const left = item.ghost ? item.ghost.leftText : item.row.leftBlock ? item.row.leftBlock.text : '';
   const right = item.ghost ? item.ghost.rightText : item.row.rightBlock ? item.row.rightBlock.text : '';
-  let changed = '';
-  if (!item.ghost && Array.isArray(item.row.wordDiffs)) {
-    changed = item.row.wordDiffs
-      .filter(d => d.added || d.removed)
-      .map(d => (d.added ? '+' : '-') + d.value)
-      .join('\u0001');
-  }
+  const changed = changedParts.map(d => (d.added ? '+' : '-') + d.value).join('\u0001');
   return [item.status, item.ghost ? 'g' : 'l', norm(left), norm(right), changed].join('\u0000');
 }
 
