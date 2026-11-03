@@ -366,6 +366,14 @@
   padding: 0;
 }
 
+/* The hidden attribute must win over component display values. Without this, an author
+   `display` (`.btn { display: inline-flex }`, `.menu-item { display: flex }`) beats the
+   user-agent `[hidden]` rule and keeps elements visible that JS has marked as hidden,
+   for example the "accept all" action when a comparison has no changes. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   font-size: 100%;
 }
