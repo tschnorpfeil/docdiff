@@ -77,17 +77,20 @@ async function extractPdfText(arrayBuffer) {
   // map them to clear, translated messages. A page that cannot be read fails the whole file
   // rather than silently dropping its text from the comparison.
   const pages = [];
+  const task = window.pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
   try {
-    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
+    const pdf = await task.promise;
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      pages.push(buildPdfPageLines(textContent.items, page.view));
+      try {
+        const textContent = await page.getTextContent();
+        pages.push(buildPdfPageLines(textContent.items, page.view));
+      } finally { page.cleanup(); }
     }
   } catch (err) {
     if (err instanceof ImportError) throw err;
     throw new ImportError(err && err.name === 'PasswordException' ? 'errPdfPassword' : 'errPdfCorrupt');
-  }
+  } finally { await task.destroy(); }
   const { text, emptyPages } = assemblePdfText(pages);
   if (pages.length === 0 || emptyPages.length === pages.length) {
     // No text layer at all: a scan or an image-only PDF. OCR is not available.
@@ -101,50 +104,22 @@ async function extractPdfText(arrayBuffer) {
 
 /* ── DOCX ──────────────────────────────────────────────────────────────── */
 
-// Minimal ZIP reader (central directory + stored/deflate entries) for the few XML parts
-// Mammoth does not expose. Returns null when the archive cannot be read this way.
+// Validate the entire archive with the bounded reader before Mammoth decompresses it.
+// Returning null on a budget failure would let the unbounded fallback run anyway.
 async function readZipTextEntries(arrayBuffer, wantedNames) {
+  // Without DecompressionStream (older browsers) the bounded reader cannot inflate anything;
+  // let Mammoth import the text and skip only the extra parts, as before.
+  if (typeof DecompressionStream === 'undefined') return null;
   try {
-    const bytes = new Uint8Array(arrayBuffer);
-    const dv = new DataView(arrayBuffer);
-    let eocd = -1;
-    for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
-      if (dv.getUint32(i, true) === 0x06054b50) {
-        eocd = i;
-        break;
-      }
-    }
-    if (eocd < 0) return null;
-    const count = dv.getUint16(eocd + 10, true);
-    let p = dv.getUint32(eocd + 16, true);
+    const entries = await readZipEntries(arrayBuffer);
     const utf8 = new TextDecoder('utf-8');
     const out = {};
-    for (let n = 0; n < count; n++) {
-      if (dv.getUint32(p, true) !== 0x02014b50) return null;
-      const method = dv.getUint16(p + 10, true);
-      const compSize = dv.getUint32(p + 20, true);
-      const nameLen = dv.getUint16(p + 28, true);
-      const extraLen = dv.getUint16(p + 30, true);
-      const commentLen = dv.getUint16(p + 32, true);
-      const localOffset = dv.getUint32(p + 42, true);
-      const name = utf8.decode(bytes.subarray(p + 46, p + 46 + nameLen));
-      p += 46 + nameLen + extraLen + commentLen;
-      if (!wantedNames.includes(name)) continue;
-      const dataStart =
-        localOffset + 30 + dv.getUint16(localOffset + 26, true) + dv.getUint16(localOffset + 28, true);
-      const data = bytes.subarray(dataStart, dataStart + compSize);
-      if (method === 0) {
-        out[name] = utf8.decode(data);
-      } else if (method === 8 && typeof DecompressionStream !== 'undefined') {
-        const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-        out[name] = utf8.decode(await new Response(stream).arrayBuffer());
-      } else {
-        return null;
-      }
+    for (const entry of entries) {
+      if (wantedNames.includes(entry.name)) out[entry.name] = utf8.decode(entry.data);
     }
     return out;
   } catch (err) {
-    return null;
+    throw new ImportError('errDocxCorrupt');
   }
 }
 
@@ -776,6 +751,8 @@ window.addEventListener('drop', e => {
 
 async function handleDropFiles(files, targetSide) {
   if (!files || !files.length) return;
+  // FileList is live: the first upload clears its input, including the second file.
+  files = Array.from(files);
   if (files.length >= 2) {
     clearImportNotice();
     await handleFileUpload(files[0], 'left', { keepNotice: true });
@@ -816,8 +793,8 @@ const fileInputLeft = document.getElementById('file-input-left');
 const fileInputRight = document.getElementById('file-input-right');
 document.getElementById('btn-upload-left').addEventListener('click', () => fileInputLeft.click());
 document.getElementById('btn-upload-right').addEventListener('click', () => fileInputRight.click());
-fileInputLeft.addEventListener('change', e => handleFileUpload(e.target.files[0], 'left'));
-fileInputRight.addEventListener('change', e => handleFileUpload(e.target.files[0], 'right'));
+fileInputLeft.addEventListener('change', e => handleDropFiles(e.target.files, 'left'));
+fileInputRight.addEventListener('change', e => handleDropFiles(e.target.files, 'right'));
 
 document.getElementById('btn-clear-left').addEventListener('click', () => {
   cancelPendingUploads('left');

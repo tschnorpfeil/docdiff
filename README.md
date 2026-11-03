@@ -136,7 +136,7 @@ python3 scripts/build.py   # writes site/index.html, site/en/index.html and DocD
 node scripts/check.mjs     # invariants and tests
 ```
 
-`scripts/check.mjs` verifies the Content Security Policy, the absence of external URLs and storage APIs, matching German and English strings, the search metadata of both language pages (title, canonical, hreflang, JSON-LD that matches the visible FAQ, sitemap, `llms.txt`), and runs the unit tests for the diff core (`scripts/test-core.mjs`) and the export builders (`scripts/test-export.mjs`). CI runs the same and also checks that the committed bundle is up to date.
+`scripts/check.mjs` verifies the Content Security Policy, the absence of external URLs and storage APIs, matching German and English strings, the search metadata and web app manifests of both language pages (title, canonical, hreflang, JSON-LD that matches the visible FAQ, sitemap, `llms.txt`, `manifest.webmanifest`), and runs the unit tests for the diff core (`scripts/test-core.mjs`), the export builders (`scripts/test-export.mjs`), and app state guards (`scripts/test-app-state.mjs`). CI runs the same and also checks that the committed bundle is up to date.
 
 Bundled libraries: [PDF.js](https://github.com/mozilla/pdf.js), [Mammoth.js](https://github.com/mwilliamson/mammoth.js), [jsdiff](https://github.com/kpdecker/jsdiff), and the [Geist](https://vercel.com/font) fonts. Versions and licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 

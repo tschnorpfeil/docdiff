@@ -17,9 +17,24 @@
 
 /* ── ZIP reading (all entries, as bytes) ─────────────────────────────────── */
 
-async function inflateRaw(bytes) {
+async function inflateRaw(bytes, limit) {
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  const reader = stream.getReader();
+  const chunks = [];
+  let size = 0;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > limit) throw new Error('zip: decompression limit exceeded');
+      chunks.push(value);
+    }
+  } finally { await reader.cancel().catch(() => {}); }
+  const result = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.length; }
+  return result;
 }
 
 /** Reads every entry of a ZIP archive: [{ name, data: Uint8Array }] in archive order. */
@@ -35,9 +50,12 @@ async function readZipEntries(input) {
   }
   if (eocd < 0) throw new Error('zip: no central directory');
   const count = dv.getUint16(eocd + 10, true);
+  if (count > 4096) throw new Error('zip: entry count limit exceeded');
   let p = dv.getUint32(eocd + 16, true);
   const utf8 = new TextDecoder('utf-8');
   const out = [];
+  const entryLimit = 64 * 1024 * 1024, totalLimit = 256 * 1024 * 1024;
+  let total = 0;
   for (let n = 0; n < count; n++) {
     if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('zip: bad central directory');
     const method = dv.getUint16(p + 10, true);
@@ -50,10 +68,15 @@ async function readZipEntries(input) {
     p += 46 + nameLen + extraLen + commentLen;
     const dataStart = localOffset + 30 + dv.getUint16(localOffset + 26, true) + dv.getUint16(localOffset + 28, true);
     const raw = bytes.subarray(dataStart, dataStart + compSize);
+    const limit = Math.min(entryLimit, totalLimit - total);
     let data;
-    if (method === 0) data = raw.slice();
-    else if (method === 8) data = await inflateRaw(raw);
+    if (method === 0) {
+      if (raw.length > limit) throw new Error('zip: decompression limit exceeded');
+      data = raw.slice();
+    }
+    else if (method === 8) data = await inflateRaw(raw, limit);
     else throw new Error(`zip: unsupported method ${method}`);
+    total += data.length;
     out.push({ name, data });
   }
   return out;
@@ -831,11 +854,15 @@ function rewriteDocxRow(unit, xml, ctx, step, rev, edit) {
     step.open ? (oldText === null ? [{ value: newText, added: true }] : computeCleanWordDiff(oldText, newText)) : [{ value: newText }];
   const writeCell = (cell, tokens) => {
     const paras = cell.paras.filter((p, i) => cell.texts[i]);
+    if (paras.length > 1) throw new Error('docx: cannot safely rewrite a multi-paragraph cell');
     const first = paras[0] || cell.paras[0];
     if (!first) throw new Error('docx: cell without paragraph');
     edit(first.start, first.end, rewriteDocxParagraph(first, xml, ctx, tokens, 0, rev, ''));
     for (const other of paras.slice(1)) edit(other.start, other.end, rewriteDocxParagraph(other, xml, ctx, [], 0, rev, ''));
   };
+  if (filled.some(c => c.text.includes(' · ')) ||
+      (oldCells && oldCells.length !== filled.length) ||
+      newCells.length !== filled.length) throw new Error('docx: ambiguous table row');
   if (newCells.length === filled.length) {
     newCells.forEach((text, i) => {
       const cell = filled[i];
@@ -845,12 +872,7 @@ function rewriteDocxRow(unit, xml, ctx, step, rev, edit) {
     });
     return newCells.join(' · ');
   }
-  // The number of filled cells changed: the whole row text goes into the first cell.
-  const target = filled[0] || unit.cells[0];
-  if (!target) throw new Error('docx: row without cells');
-  writeCell(target, step.open && step.oldBlock ? computeCleanWordDiff(docxKey(step.oldBlock.text), docxKey(step.block.text)) : [{ value: docxKey(step.block.text) }]);
-  for (const cell of filled) if (cell !== target) writeCell(cell, []);
-  return docxKey(step.block.text);
+  throw new Error('docx: ambiguous table row');
 }
 
 /* ── Entry point ────────────────────────────────────────────────────────── */

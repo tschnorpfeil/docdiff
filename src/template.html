@@ -72,8 +72,8 @@ __APP_CSS__
 </head>
 <body>
 
-  <input type="file" id="file-input-left" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
-  <input type="file" id="file-input-right" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
+  <input type="file" id="file-input-left" accept=".pdf,.docx,.txt,.md,.html" multiple style="display:none" />
+  <input type="file" id="file-input-right" accept=".pdf,.docx,.txt,.md,.html" multiple style="display:none" />
   <input type="file" id="file-input-session" accept=".docdiff" style="display:none" />
 
   <!-- ── 1. TOP BAR: the only permanent chrome of the comparison (≈52 px) ───────────────── -->
@@ -158,6 +158,10 @@ __APP_CSS__
           </div>
         </div>
       </div>
+      <!-- Direct swap: forwards to #btn-swap-docs (same handler, same unsaved-work guard) -->
+      <button type="button" class="tb-icon-btn tb-swap compare-only hide-phone" id="btn-swap-quick" aria-label="Alte und neue Fassung tauschen" data-i18n-label="swapBtn" data-tooltip="">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+      </button>
     </div>
 
     <div class="tb-center compare-only">
@@ -377,7 +381,7 @@ __APP_CSS__
 
         <section class="landing-section" aria-labelledby="how-title">
           <h2 id="how-title" data-i18n="howTitle">So funktioniert’s</h2>
-          <ol class="how-steps">
+          <ol class="how-steps" role="list">
             <li><span class="how-num" aria-hidden="true">1</span><span><strong data-i18n="how1Title">Zwei Fassungen wählen</strong> <span data-i18n="how1Text">Als PDF, Word-Datei oder eingefügten Text. Die Dateien werden nur in diesem Browser-Tab gelesen.</span></span></li>
             <li><span class="how-num" aria-hidden="true">2</span><span><strong data-i18n="how2Title">Änderungen durchgehen</strong> <span data-i18n="how2Text">Entferntes ist rot durchgestrichen, Neues grün markiert. Die Liste rechts führt von Änderung zu Änderung.</span></span></li>
             <li><span class="how-num" aria-hidden="true">3</span><span><strong data-i18n="how3Title">Ergebnis sichern, wenn Sie es brauchen</strong> <span data-i18n="how3Text">Als Word-Datei mit markierten Änderungen, als PDF oder als Bericht speichern.</span></span></li>
@@ -402,7 +406,7 @@ __APP_CSS__
           <div class="scope-grid">
             <div class="scope-col scope-can">
               <h3 data-i18n="scopeCanTitle">Kann</h3>
-              <ul>
+              <ul role="list">
                 <li data-i18n="scopeCan1">PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen</li>
                 <li data-i18n="scopeCan2">Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge</li>
                 <li data-i18n="scopeCan3">Seiten wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet</li>
@@ -413,7 +417,7 @@ __APP_CSS__
             </div>
             <div class="scope-col scope-cannot">
               <h3 data-i18n="scopeCannotTitle">Kann nicht</h3>
-              <ul>
+              <ul role="list">
                 <li data-i18n="scopeCannot1">Gescannte PDFs lesen – es gibt keine Texterkennung (OCR)</li>
                 <li data-i18n="scopeCannot2">Alte Word-Dateien (.doc) öffnen – bitte vorher als .docx speichern</li>
                 <li data-i18n="scopeCannot3">Formatierung vergleichen – Fett, Kursiv, Tabellenlayout und Bilder werden ignoriert, verglichen wird nur der Text</li>

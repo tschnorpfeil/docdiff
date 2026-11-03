@@ -779,3 +779,21 @@ window.addEventListener('resize', () => {
     scheduleRulerDraw();
   }, 60);
 });
+
+/* ── Direct swap in the top bar ─────────────────────────────────────────────
+ * A second entry point to the swap in the documents popover. It only forwards the click, so the
+ * swap itself (and the guard in front of it that protects unsaved review work) stays in one place.
+ * The aria-label comes from data-i18n-label; the visual tooltip reads the same text on demand,
+ * so it follows the language without a separate update step. */
+const btnSwapQuick = document.getElementById('btn-swap-quick');
+if (btnSwapQuick) {
+  const syncSwapTooltip = () => btnSwapQuick.setAttribute('data-tooltip', t('swapBtn'));
+  syncSwapTooltip();
+  // Runs on the button itself, before the document-level tooltip handlers read the attribute.
+  btnSwapQuick.addEventListener('pointerover', syncSwapTooltip);
+  btnSwapQuick.addEventListener('focusin', syncSwapTooltip);
+  btnSwapQuick.addEventListener('click', () => {
+    hideTooltip();
+    document.getElementById('btn-swap-docs').click();
+  });
+}

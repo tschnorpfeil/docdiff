@@ -905,14 +905,17 @@ async function exportWord(kind) {
       if (typeof console !== 'undefined') console.warn('Doc Diff: original-format Word export not possible:', err && err.message);
     }
   }
+  if (fellBack && !window.confirm(t('confirmWordFallback'))) return false;
   if (!bytes) bytes = buildGeneratedDocx(kind, date);
-  const filename = kind === 'final' ? buildFinalFileName('docx') : buildExportFileName('exportFileRedline', 'docx');
+  let filename = kind === 'final' ? buildFinalFileName('docx') : buildExportFileName('exportFileRedline', 'docx');
+  if (fellBack) filename = filename.replace(/\.docx$/, '_Generated.docx');
   downloadBlob(bytes, DOCX_MIME, filename);
   if (fellBack && typeof showImportNotice === 'function') {
     showImportNotice(tf('noticeWordFallback', { name: filename }), 'warning');
   } else if (typeof showToast === 'function') {
     showToast(tf(source ? 'toastWordOriginal' : 'toastWord', { name: filename }));
   }
+  return true;
 }
 
 function startPrint(kind) {

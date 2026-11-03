@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
+import { deflateRawSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -454,6 +455,59 @@ await (async () => {
   const noteRows = api.alignDocumentBlocks(api.parseIntoBlocks(old), noteFinal);
   await assert.rejects(api.buildDocxFromSource({ bytes, importedText: withNote }, noteFinal, noteRows, 'final', date), /outside the body/);
   checks += 6;
+})();
+
+// Streaming limits use actual output bytes, independent of archive size claims.
+{
+  const compressed = deflateRawSync(Buffer.alloc(100_000, 65));
+  await assert.rejects(api.inflateRaw(compressed, 64), /decompression limit/);
+  assert.equal((await api.inflateRaw(compressed, 100_000)).length, 100_000);
+  const tooMany = Buffer.alloc(22);
+  tooMany.writeUInt32LE(0x06054b50, 0);
+  tooMany.writeUInt16LE(4097, 10);
+  await assert.rejects(api.readZipEntries(tooMany), /entry count limit/);
+  checks++;
+}
+
+// Numeric filtering examines changed tokens, not unchanged clause numbers.
+{
+  assert.equal(api.itemHasNumericChange({ row: { type: 'modified', wordDiffs: [{ value: '§ 3 ' }, { value: 'may', removed: true }, { value: 'must', added: true }] } }), false);
+  assert.equal(api.itemHasNumericChange({ row: { type: 'modified', wordDiffs: [{ value: '14', removed: true }, { value: '30', added: true }] } }), true);
+  assert.equal(api.itemHasNumericChange({ row: { type: 'inserted', rightBlock: { text: 'Price CHF 50' } } }), true);
+  assert.equal(api.itemHasNumericChange({ ghost: { leftText: 'Term 14 days', rightText: 'Term 30 days' } }), true);
+  checks++;
+}
+
+// Ambiguous cell boundaries and paragraph structure must never be flattened silently.
+{
+  const step = { block: { text: 'A · B · C' }, oldBlock: null, open: false };
+  assert.throws(() => api.rewriteDocxRow({ cells: [{ text: 'A · B' }, { text: 'C' }] }, '', {}, step, () => '', () => {}), /ambiguous table/);
+  assert.throws(() => api.rewriteDocxRow({ cells: [{ text: 'A' }, { text: 'B' }] }, '', {}, { ...step, block: { text: 'AB' } }, () => '', () => {}), /ambiguous table/);
+  const cell = { text: 'A B', texts: ['A', 'B'], paras: [{}, {}] };
+  assert.throws(() => api.rewriteDocxRow({ cells: [cell] }, '', {}, { ...step, block: { text: 'C' } }, () => '', () => {}), /multi-paragraph/);
+  checks += 3;
+}
+
+// A source-format failure requires a decision before any generated download.
+await (async () => {
+  const originals = {};
+  for (const key of ['getRightDocxSource', 'buildDocxFromSource', 'buildGeneratedDocx', 'downloadBlob', 'confirm']) originals[key] = api[key];
+  let downloads = 0;
+  let filename = '';
+  api.getRightDocxSource = () => ({});
+  api.buildDocxFromSource = async () => { throw new Error('unsupported table'); };
+  api.buildGeneratedDocx = () => new Uint8Array();
+  api.downloadBlob = (_, __, name) => { downloads++; filename = name; };
+  api.confirm = () => false;
+  try {
+    assert.equal(await api.exportWord('final'), false);
+    assert.equal(downloads, 0, 'cancel leaves no downloaded fallback');
+    api.confirm = () => true;
+    assert.equal(await api.exportWord('final'), true);
+    assert.equal(downloads, 1);
+    assert.match(filename, /_Generated\.docx$/);
+    checks += 2;
+  } finally { Object.assign(api, originals); }
 })();
 
 console.log(`✓ Export builder tests passed (${checks} check groups).`);
