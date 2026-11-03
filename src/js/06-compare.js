@@ -712,6 +712,18 @@ function getItemPage(item) {
   return item.ghost ? item.ghost.pageNum || 1 : item.row.pageNum || 1;
 }
 
+// Inspect only changed text: an unchanged clause number must not trigger this filter.
+function itemHasNumericChange(item) {
+  if (item.ghost) return computeCleanWordDiff(item.ghost.leftText || '', item.ghost.rightText || '').some(part =>
+    (part.added || part.removed) && /[0-9\p{Sc}%]/u.test(part.value));
+  const row = item.row;
+  if (row.wordDiffs && row.wordDiffs.length) {
+    return row.wordDiffs.some(part => (part.added || part.removed) && /[0-9\p{Sc}%]/u.test(part.value));
+  }
+  if (row.type === 'modified') return false;
+  return /[0-9\p{Sc}%]/u.test((row.rightBlock || row.leftBlock || {}).text || '');
+}
+
 // List items under the active list filter (search never filters the list).
 function getFilteredListItems() {
   const f = state.sidebarFilter;
@@ -719,7 +731,7 @@ function getFilteredListItems() {
   return state.listItems.filter(item => {
     if (s === 'open' && item.status !== 'open') return false;
     if (s === 'reviewed' && item.status === 'open') return false;
-    return f === 'all' || item.type === f;
+    return f === 'all' || (f === 'numeric' ? itemHasNumericChange(item) : item.type === f);
   });
 }
 // Kept for callers and QA scripts written against the earlier name.
@@ -729,6 +741,21 @@ function updateSidebarHeaderState() {
   const total = state.listItems.length;
   const counts = getChangeCounts();
   const review = getReviewCounts();
+  let action = document.getElementById('btn-review-all');
+  if (!action) {
+    action = document.createElement('button');
+    action.id = 'btn-review-all';
+    action.type = 'button';
+    action.className = 'btn btn-ghost';
+    action.addEventListener('click', () => {
+      if (getReviewCounts().open) acceptAllOpenChanges();
+      else handleExportAction('word-final');
+    });
+    document.getElementById('sidebar-list').before(action);
+  }
+  action.hidden = !total;
+  action.disabled = !canReviewNow();
+  action.textContent = review.open ? formatMsg('reviewAcceptAll', { n: review.open }) : t('reviewCompleteExport');
   const filtered = state.sidebarFilter !== 'all' || state.statusFilter !== 'all';
   document.getElementById('list-title').textContent = filtered
     ? formatMsg('listTitleFiltered', { k: getFilteredListItems().length, n: total })
@@ -742,6 +769,11 @@ function updateSidebarHeaderState() {
 
   // One filter: "Alle", a review status or a kind of change, each with its count.
   const select = document.getElementById('list-filter');
+  if (!select.querySelector('option[value="numeric"]')) {
+    const option = document.createElement('option');
+    option.value = 'numeric';
+    document.getElementById('lf-group-kind').appendChild(option);
+  }
   const value = state.statusFilter !== 'all' ? state.statusFilter : state.sidebarFilter;
   const options = [
     ['all', 'filterAll', total],
@@ -750,6 +782,7 @@ function updateSidebarHeaderState() {
     ['modified', 'filterMod', counts.mod],
     ['inserted', 'filterIns', counts.ins],
     ['deleted', 'filterDel', counts.del],
+    ['numeric', 'filterNumeric', state.listItems.filter(itemHasNumericChange).length],
   ];
   for (const [v, key, n] of options) {
     const opt = select.querySelector(`option[value="${v}"]`);

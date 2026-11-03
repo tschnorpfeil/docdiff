@@ -1,8 +1,7 @@
 /* ── Work-Loss Protection: Unsaved-Changes Guard & Saved Work (.docdiff) ──
  *
  * Nothing is ever written to browser storage. Work is protected in two ways:
- *  1. A dirty flag (inline edits, accepted / rejected changes since the last load, save or
- *     export) drives the native `beforeunload` prompt and an in-app dialog in front of every
+ *  1. A dirty flag (inline edits, accepted / rejected changes since the last load or session save) drives the native `beforeunload` prompt and an in-app dialog in front of every
  *     action that would throw this work away ("Abbrechen / Arbeitsstand speichern / Verwerfen").
  *  2. "Arbeitsstand speichern…" downloads a self-describing JSON file (.docdiff) to the
  *     user's own disk; "Arbeitsstand öffnen…" validates it strictly and restores it through
@@ -36,7 +35,7 @@ const REVIEW_TYPES = ['modified', 'inserted', 'deleted'];
 const sessionTracker = {
   // Right-hand text as it was last loaded (before any inline edits).
   originalRightText: state.rightText,
-  // Right-hand text and review status at the last "clean point" (load, save, export).
+  // Right-hand text and review status at the last "clean point" (load or session save).
   cleanRightText: state.rightText,
   cleanReviews: serializeReviews(),
   // Right-hand text seen by the previous runComparison call.
@@ -109,16 +108,21 @@ wrapGlobalFunction('runComparison', original =>
 wrapGlobalFunction('resetEditHistory', original =>
   function resetEditHistoryForLoad() {
     sessionTracker.editPending = false;
-    return original.apply(this, arguments);
+    const result = original.apply(this, arguments);
+    if (!sessionTracker.restoring) {
+      sessionTracker.originalRightText = state.rightText;
+      markSessionClean();
+    }
+    return result;
   }
 );
 
 wrapGlobalFunction('handleFileUpload', original =>
   async function guardedFileUpload(file, side) {
-    if (file && side === 'right' && !sessionTracker.bypassGuard && isSessionDirty()) {
+    if (file && !sessionTracker.bypassGuard && isSessionDirty()) {
       const ok = await confirmDiscardEdits();
       if (!ok) {
-        const input = document.getElementById('file-input-right');
+        const input = document.getElementById(`file-input-${side}`);
         if (input) input.value = '';
         return undefined;
       }
@@ -129,12 +133,15 @@ wrapGlobalFunction('handleFileUpload', original =>
 
 wrapGlobalFunction('handleDropFiles', original =>
   async function guardedDropFiles(files, targetSide) {
-    const replacesRight = files && (files.length >= 2 || (files.length === 1 && targetSide === 'right'));
-    if (replacesRight && !sessionTracker.bypassGuard && isSessionDirty()) {
-      if (!(await confirmDiscardEdits())) return undefined;
+    const replacesDocument = files && files.length > 0;
+    if (replacesDocument && !sessionTracker.bypassGuard) {
+      // Keep the pair under one guard even when it starts clean: replacing the left
+      // side can reset reviews and otherwise cause a second prompt halfway through.
+      const pickedFiles = Array.from(files);
+      if (isSessionDirty() && !(await confirmDiscardEdits())) return undefined;
       sessionTracker.bypassGuard++;
       try {
-        return await original.apply(this, arguments);
+        return await original.call(this, pickedFiles, targetSide);
       } finally {
         sessionTracker.bypassGuard--;
       }
@@ -233,7 +240,7 @@ async function confirmDiscardEdits() {
     discardLabel: t('sessionDiscardConfirm'),
   });
   if (choice === 'confirm') {
-    saveSession();
+    if (!saveSession()) return false;
     return true;
   }
   return choice === 'discard';
@@ -251,23 +258,20 @@ function showSessionError(messageKey) {
 const SESSION_GUARDED_CLICKS = [
   { selector: '#btn-clear' },
   { selector: '#btn-clear-right' },
+  { selector: '#btn-clear-left' },
   { selector: '#lp-clear-right' },
   { selector: '#btn-swap-docs' },
   { selector: '.btn-load-sample' },
   { selector: '#btn-help-sample' },
   {
     // The paste dialog is pre-filled with the edited text; only an actual
-    // change of the right-hand text discards edits.
+    // change of either document resets review decisions.
     selector: '#btn-apply-modal',
     when: () => {
       const ta = document.getElementById('textarea-right');
-      return !!ta && ta.value !== pasteModalShown.right;
+      const left = document.getElementById('textarea-left');
+      return (!!ta && ta.value !== pasteModalShown.right) || (!!left && left.value !== pasteModalShown.left);
     },
-  },
-  {
-    // Toggling the language while the sample is shown reloads the sample.
-    selector: '#btn-lang, #menu-lang, #footer-lang-link',
-    when: () => state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO',
   },
 ];
 
@@ -437,9 +441,17 @@ function saveSession() {
   }
   const name = buildSessionFileName();
   const json = JSON.stringify(buildSessionPayload(), null, 1);
+  if (new Blob([json]).size > SESSION_MAX_FILE_BYTES) {
+    showSessionDialog({
+      title: state.lang === 'de' ? 'Arbeitsstand kann nicht gespeichert werden' : 'Cannot save work',
+      body: t('sessionErrorTooLarge'), confirmLabel: t('sessionOk'),
+    });
+    return false;
+  }
   downloadSessionFile(json, name);
   markSessionClean();
   if (typeof showToast === 'function') showToast(formatMsg('toastSession', { name }));
+  return true;
 }
 
 /* ── Opening: strict validation, then restore ───────────────────────────── */
@@ -718,17 +730,9 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-session-action="save"]')) saveSession();
 });
 
-// Downloading the result counts as saving it. Copying and printing do not: the
-// clipboard is volatile, and neither a failed copy nor a cancelled print dialog can be
-// detected, so they must not silence the unsaved-changes warning.
-const SESSION_CLEANING_EXPORTS = ['txt', 'word', 'html', 'md'];
-document.addEventListener('click', e => {
-  if (!(e.target instanceof Element)) return;
-  const item = e.target.closest('#export-menu [data-export]');
-  if (item && SESSION_CLEANING_EXPORTS.includes(item.getAttribute('data-export'))) {
-    markSessionClean();
-  }
-});
+// Result exports do not preserve review decisions, source documents or undo history.
+// Only saving a .docdiff session establishes a clean point.
+const SESSION_CLEANING_EXPORTS = [];
 
 // A dropped .docdiff file is saved work, never a document to compare. This
 // capture listener runs before the pane / landing drop handlers.

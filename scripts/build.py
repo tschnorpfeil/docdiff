@@ -50,6 +50,7 @@ PAGES = {
             ]
         },
         "asset_base": "",
+        "manifest_href": "manifest.webmanifest",
         "og_locale": "de_DE",
         "og_locale_alt": "en_US",
         "og_image": SITE_URL + "og-image.png?v=3",
@@ -59,6 +60,7 @@ PAGES = {
         "url": SITE_URL + "en/",
         "html_attrs": 'lang="en" data-page-lang="en"',
         "asset_base": "../",
+        "manifest_href": "manifest.webmanifest",
         "og_locale": "en_US",
         "og_locale_alt": "de_DE",
         "og_image": SITE_URL + "og-image-en.png?v=1",
@@ -222,8 +224,10 @@ def render_page(template: str, lang: str, i18n: dict, version: str) -> str:
     )
     alt_lang = "en" if lang == "de" else "de"
     alt_href = (SITE_URL + "en/") if lang == "de" else SITE_URL
+    manifest_href = page.get("manifest_href", "manifest.webmanifest")
     out = (
-        out.replace("__HTML_ATTRS__", page["html_attrs"])
+        out.replace('href="__ASSET_BASE__manifest.webmanifest"', f'href="{manifest_href}"')
+        .replace("__HTML_ATTRS__", page["html_attrs"])
         .replace("__PAGE_URL__", page["url"])
         .replace("__ASSET_BASE__", page["asset_base"])
         .replace("__OG_LOCALE__", page["og_locale"])

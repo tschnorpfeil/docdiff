@@ -59,6 +59,7 @@
   --topbar-h: 52px;
   --list-w: 336px;
   --ruler-w: 14px;
+  --pane-pad-x: var(--sp-6);    /* outer padding of a document pane; the inner side is --sp-4 */
 
   --background: 0 0% 97.5%;
   --foreground: 215 25% 13%;
@@ -429,6 +430,14 @@ body:not(.is-comparing) .topbar {
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
+}
+/* Direct swap next to the file pair: quieter than the stepper, same 44 px target */
+.tb-swap {
+  color: hsl(var(--muted-foreground));
+}
+.tb-swap:hover,
+.tb-swap:focus-visible {
+  color: hsl(var(--foreground));
 }
 .tb-icon-btn.sm {
   width: 30px;
@@ -953,7 +962,7 @@ body.is-comparing .empty-launchpad {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
-  color: hsl(var(--primary));
+  color: hsl(var(--primary-ink));
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -1284,10 +1293,12 @@ body.is-dragging-file .drop-slot-btn {
 }
 .scope-can li::before {
   content: "✓";
+  content: "✓" / "";
   color: hsl(var(--success-ink));
 }
 .scope-cannot li::before {
   content: "–";
+  content: "–" / "";
   color: hsl(var(--destructive-ink));
 }
 
@@ -1402,7 +1413,7 @@ body:not(.view-inline) #pane-right { grid-column: 3; }
 /* The hidden stacked pane spans the ruler too; the extra padding keeps its text width */
 body:not(.view-inline) #pane-unified {
   grid-column: 1 / 4;
-  padding-right: calc(var(--sp-6) + var(--ruler-w));
+  padding-right: calc(var(--pane-pad-x) + var(--ruler-w));
 }
 
 body.view-inline #pane-left,
@@ -1420,7 +1431,7 @@ body:not(.view-inline) #pane-unified {
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  padding: 0 var(--sp-6) var(--sp-7);
+  padding: 0 var(--pane-pad-x) var(--sp-7);
   background: hsl(var(--card));
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--input)) transparent;
@@ -1458,6 +1469,15 @@ body:not(.view-inline) #pane-unified {
   .doc-pane-unified:focus-visible > .pane-caption {
     color: hsl(var(--foreground));
     box-shadow: inset 0 -2px 0 hsl(var(--ring));
+  }
+}
+
+/* Narrow desktops (1200–1439 px): the list and the outer padding give the text some room back.
+   Both panes shrink by the same amount, so unchanged paragraphs still wrap identically. */
+@media (min-width: 1200px) and (max-width: 1439px) {
+  :root {
+    --list-w: 304px;
+    --pane-pad-x: var(--sp-5);
   }
 }
 

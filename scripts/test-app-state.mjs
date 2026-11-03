@@ -75,12 +75,12 @@ let groups = 0;
   groups++;
 }
 
-// 3. Only real downloads mark the session as saved; a failed copy is never reported as copied.
+// 3. Lossy result downloads never mark the full session saved; failed copy stays unreported.
 {
   const m = session.match(/const SESSION_CLEANING_EXPORTS = (\[[^\]]*\]);/);
   assert.ok(m, 'SESSION_CLEANING_EXPORTS present');
   const list = vm.runInNewContext(m[1]);
-  assert.deepEqual([...list].sort(), ['html', 'md', 'txt', 'word']);
+  assert.deepEqual([...list], [], 'only a session save preserves the full work');
   const copy = extractFunction(exportJs, 'copyFinalTextToClipboard');
   assert.match(copy, /if \(copied\) flashCopied\(\);/, 'copied label only after a successful copy');
   groups++;
@@ -180,6 +180,8 @@ let groups = 0;
   assert.equal(ok(el('SECTION', ['#pane-right'])), true, 'document pane');
   assert.equal(ok(el('BUTTON', ['#sidebar-list'])), true, 'change list item');
   assert.equal(ok(el('BUTTON', [])), false, 'toolbar button');
+  assert.equal(ok(el('BUTTON', ['.stepper'])), true, 'stepper');
+  assert.equal(ok(el('BUTTON', ['.review-bar'])), true, 'floating review controls');
   assert.equal(ok(el('TEXTAREA', ['#pane-right', '.clause-inline-editor'])), false, 'inline editor');
   assert.equal(ok(el('INPUT', [], { type: 'search' })), false, 'search box');
   assert.equal(ok(el('DIV', ['#pane-right', '[contenteditable]'], { ce: true })), false, 'contenteditable');
@@ -329,6 +331,139 @@ let groups = 0;
   bad({ ...withSource('left'), documents: { ...v2.documents, left: { ...v2.documents.left, source: { kind: 'pdf', data: '', importedText: '' } } } });
   bad({ ...withSource('left'), documents: { ...v2.documents, left: { ...v2.documents.left, source: { kind: 'docx', data: 'no base64!', importedText: '' } } } });
   assert.equal(({}).status, undefined, 'no prototype pollution');
+  groups++;
+}
+
+// Language changes preserve saved demo edits, reviews and undo history.
+{
+  const ctx = { state: {}, SAMPLES: { de: { v1: 'old', v2: 'new' }, en: { v1: 'old en', v2: 'new en' } },
+    document: { getElementById: () => null }, t: k => k,
+    resetEditHistory() { throw new Error('history must survive'); },
+    applyTranslationsToStaticDom() {}, runComparison() {} };
+  vm.createContext(ctx);
+  vm.runInContext(extractFunction(read('10-controls.js'), 'toggleLanguage'), ctx);
+  for (const extra of [{ rightText: 'saved edit' }, { reviews: { k: { status: 'accepted' } } }, { undoStack: ['new'] }]) {
+    ctx.state = { lang: 'de', leftFormat: 'DEMO', rightFormat: 'DEMO', leftText: 'old', rightText: 'new', reviews: {}, undoStack: [], redoStack: [], ...extra };
+    const before = JSON.stringify({ ...ctx.state, lang: 'en' });
+    vm.runInContext('toggleLanguage()', ctx);
+    assert.equal(JSON.stringify(ctx.state), before);
+  }
+  groups++;
+}
+
+// Exact changed tokens protect substantive digits; missing tokens require exact text.
+{
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(extractFunction(read('06d-review.js'), 'headerFooterGroupKey'), ctx);
+  const key = (left, right, diffs, ghost = false) => {
+    ctx.item = { type: 'modified', status: ghost ? 'rejected' : 'open',
+      ghost: ghost ? { leftText: left, rightText: right } : null,
+      row: { leftBlock: { text: left }, rightBlock: { text: right }, wordDiffs: diffs } };
+    return vm.runInContext('headerFooterGroupKey(item)', ctx);
+  };
+  const tokens = n => [{ removed: true, value: '100' }, { added: true, value: String(n) }];
+  assert.equal(key('Page 1 total 100', 'Page 1 total 200', tokens(200)), key('Page 2 total 100', 'Page 2 total 200', tokens(200)));
+  assert.notEqual(key('Total 100', 'Total 200', tokens(200)), key('Total 100', 'Total 300', tokens(300)));
+  for (const ghost of [true, false]) assert.notEqual(key('Total 100', 'Total 200', undefined, ghost), key('Total 100', 'Total 300', undefined, ghost));
+  groups++;
+}
+
+// Batch acceptance is confirmed, revalidated and one undo step, including grouped members.
+{
+  const ctx = { state: {}, canReviewNow: () => true, itemMembers: item => item.members || [item],
+    showSessionDialog: async () => 'confirm', pushUndoSnapshot() { ctx.undos++; },
+    refreshReviewState() {}, announce() {}, undos: 0 };
+  vm.createContext(ctx);
+  vm.runInContext('async ' + extractFunction(read('06d-review.js'), 'acceptAllOpenChanges'), ctx);
+  const member = k => ({ row: { reviewKey: k, type: 'modified' } });
+  const reset = () => { ctx.undos = 0; ctx.state = { lang: 'en', leftText: 'a', rightText: 'b', reviews: {}, listItems: [
+    { status: 'open', members: [member('one'), member('two')] }, { status: 'accepted', ...member('prior') }] }; };
+  reset();
+  assert.equal(await vm.runInContext('acceptAllOpenChanges()', ctx), true);
+  assert.equal(ctx.undos, 1);
+  assert.deepEqual(Object.keys(ctx.state.reviews), ['one', 'two']);
+  reset(); ctx.showSessionDialog = async () => 'cancel';
+  assert.equal(await vm.runInContext('acceptAllOpenChanges()', ctx), false);
+  assert.equal(ctx.undos, 0);
+  reset(); ctx.showSessionDialog = async () => { ctx.state.rightText = 'changed'; return 'confirm'; };
+  assert.equal(await vm.runInContext('acceptAllOpenChanges()', ctx), false);
+  assert.equal(ctx.undos, 0);
+  groups++;
+}
+
+// A file exceeding the loader limit is never downloaded or marked clean.
+{
+  let downloads = 0, clean = 0;
+  const ctx = { state: { leftText: 'A', rightText: 'B', lang: 'en' },
+    SESSION_MAX_FILE_BYTES: 10, Blob: class { constructor() { this.size = 11; } },
+    t: k => k, buildSessionFileName: () => 'work.docdiff', buildSessionPayload: () => ({}),
+    showSessionDialog() {}, downloadSessionFile() { downloads++; }, markSessionClean() { clean++; } };
+  vm.createContext(ctx);
+  vm.runInContext(extractFunction(session, 'saveSession'), ctx);
+  assert.equal(vm.runInContext('saveSession()', ctx), false);
+  assert.equal(downloads, 0);
+  assert.equal(clean, 0);
+  groups++;
+}
+
+// A picker FileList is live and can be cleared by the first asynchronous upload.
+{
+  const files = { 0: { name: 'old.docx' }, 1: { name: 'new.docx' }, length: 2 };
+  const calls = [];
+  const ctx = { files, clearImportNotice() {}, async handleFileUpload(file, side) {
+    calls.push([file?.name, side]);
+    delete files[0]; delete files[1]; files.length = 0;
+  } };
+  vm.createContext(ctx);
+  vm.runInContext('async ' + extractFunction(read('09-import.js'), 'handleDropFiles'), ctx);
+  await vm.runInContext("handleDropFiles(files, 'left')", ctx);
+  assert.deepEqual(calls, [['old.docx', 'left'], ['new.docx', 'right']]);
+  groups++;
+}
+
+// Pair replacement has one guard, including when resetting the left side changes dirty state.
+{
+  const start = session.indexOf("wrapGlobalFunction('handleDropFiles'");
+  const end = session.indexOf('/* ── Accessible', start);
+  for (const [dirty, allow] of [[false, true], [true, true], [true, false]]) {
+    let wrapped, calls = 0, prompts = 0;
+    const tracker = { bypassGuard: 0 };
+    const ctx = { sessionTracker: tracker, isSessionDirty: () => dirty,
+      confirmDiscardEdits: async () => { prompts++; return allow; },
+      wrapGlobalFunction: (_, factory) => { wrapped = factory(async files => {
+        calls++;
+        assert.equal(tracker.bypassGuard, 1, 'the entire pair bypasses nested guards');
+        assert.ok(Array.isArray(files), 'selection is snapshotted before waiting');
+      }); } };
+    vm.createContext(ctx);
+    vm.runInContext(session.slice(start, end), ctx);
+    await wrapped({ 0: {}, 1: {}, length: 2 }, 'left');
+    assert.equal(prompts, dirty ? 1 : 0);
+    assert.equal(calls, !dirty || allow ? 1 : 0);
+    assert.equal(tracker.bypassGuard, 0, 'guard restored');
+  }
+  groups++;
+}
+
+// Explicitly loading a pair establishes a baseline even when its right text is unchanged.
+{
+  const tracker = { restoring: false, editPending: true };
+  let wrapped, clean = 0;
+  const ctx = { sessionTracker: tracker, state: { rightText: 'same text' },
+    markSessionClean: () => { clean++; },
+    wrapGlobalFunction: (_, factory) => { wrapped = factory(() => 42); } };
+  vm.createContext(ctx);
+  const start = session.indexOf("wrapGlobalFunction('resetEditHistory'");
+  const end = session.indexOf("wrapGlobalFunction('handleFileUpload'", start);
+  vm.runInContext(session.slice(start, end), ctx);
+  assert.equal(wrapped(), 42);
+  assert.equal(clean, 1);
+  assert.equal(tracker.originalRightText, 'same text');
+  assert.equal(tracker.editPending, false);
+  tracker.restoring = true;
+  wrapped();
+  assert.equal(clean, 1, 'session restoration keeps its own baseline');
   groups++;
 }
 

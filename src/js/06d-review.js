@@ -134,11 +134,16 @@ function isHeaderFooterItem(item) {
 }
 
 // Running headers and footers repeat on every page with the page number in them: the same
-// change on several pages is one decision. Numbers are ignored when comparing the lines; the
-// changed words themselves must be identical.
+// change on several pages is one decision. Normalize digits only when exact changed tokens
+// are available; rejected entries lack those tokens and must retain their substantive numbers.
 function headerFooterGroupKey(item) {
   if (item.type !== 'modified') return '';
-  const norm = s => String(s || '').replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+  const hasTokens = !item.ghost && Array.isArray(item.row.wordDiffs) &&
+    item.row.wordDiffs.some(d => d.added || d.removed);
+  const norm = s => {
+    const text = String(s || '');
+    return (hasTokens ? text.replace(/\d+/g, '#') : text).replace(/\s+/g, ' ').trim();
+  };
   const left = item.ghost ? item.ghost.leftText : item.row.leftBlock ? item.row.leftBlock.text : '';
   const right = item.ghost ? item.ghost.rightText : item.row.rightBlock ? item.row.rightBlock.text : '';
   let changed = '';
@@ -576,4 +581,33 @@ function runReviewAction(action, fromList) {
   }
   applyPendingRowFocusIfIdle();
   return done;
+}
+
+// All open list entries in this comparison, including hidden/filtered entries and every
+// member of a grouped header/footer change. Revalidate after the confirmation dialog.
+async function acceptAllOpenChanges() {
+  if (!canReviewNow()) return false;
+  const items = state.listItems.filter(item => item.status === 'open' && !item.ghost);
+  if (!items.length) return false;
+  const leftText = state.leftText, rightText = state.rightText;
+  const signature = JSON.stringify(items.map(item => itemMembers(item).map(m => m.row.reviewKey)));
+  const de = state.lang === 'de';
+  const choice = await showSessionDialog({
+    title: de ? 'Alle offenen Änderungen annehmen?' : 'Accept all open changes?',
+    body: de
+      ? `Alle ${items.length} offenen Einträge im gesamten Vergleich annehmen, einschließlich ausgeblendeter und gefilterter Einträge sowie aller Seiten gruppierter Kopf-/Fußzeilen? Dies ist mit einem Rückgängig-Schritt umkehrbar.`
+      : `Accept all ${items.length} open entries in the entire comparison, including hidden and filtered entries and every page of grouped headers/footers? This can be undone in one step.`,
+    confirmLabel: de ? 'Alle annehmen' : 'Accept all',
+    cancelLabel: de ? 'Abbrechen' : 'Cancel',
+  });
+  if (choice !== 'confirm' || !canReviewNow() || state.leftText !== leftText || state.rightText !== rightText) return false;
+  const current = state.listItems.filter(item => item.status === 'open' && !item.ghost);
+  if (JSON.stringify(current.map(item => itemMembers(item).map(m => m.row.reviewKey))) !== signature) return false;
+  pushUndoSnapshot();
+  for (const item of current) {
+    for (const m of itemMembers(item)) state.reviews[m.row.reviewKey] = { status: 'accepted', type: m.row.type };
+  }
+  refreshReviewState();
+  announce(de ? `${items.length} Einträge angenommen.` : `Accepted ${items.length} entries.`);
+  return true;
 }

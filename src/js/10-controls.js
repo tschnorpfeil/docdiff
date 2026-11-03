@@ -453,7 +453,7 @@ function isShortcutFocusContext(el) {
   if (isTextEntryElement(el) || (el.closest && el.closest('[contenteditable], .clause-inline-editor, dialog'))) {
     return false;
   }
-  return Boolean(el.closest && el.closest('#pane-left, #pane-right, #pane-unified, #sidebar-list'));
+  return Boolean(el.closest && el.closest('#pane-left, #pane-right, #pane-unified, #sidebar-list, .review-bar, .stepper'));
 }
 
 window.addEventListener('keydown', e => {
@@ -565,8 +565,12 @@ function clearComparison() {
 function toggleLanguage() {
   const langHint = document.getElementById('lang-hint');
   if (langHint) langHint.hidden = true;
+  const previousSample = SAMPLES[state.lang] || SAMPLES.de;
+  const pristineDemo = state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO' &&
+    state.leftText === previousSample.v1 && state.rightText === previousSample.v2 &&
+    Object.keys(state.reviews).length === 0 && state.undoStack.length === 0 && state.redoStack.length === 0;
   state.lang = state.lang === 'de' ? 'en' : 'de';
-  if (state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO') {
+  if (pristineDemo) {
     const sample = SAMPLES[state.lang] || SAMPLES.de;
     state.leftName = t('sampleLeftName');
     state.leftText = sample.v1;

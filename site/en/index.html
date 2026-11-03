@@ -42,7 +42,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='100 80 340 340' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='gp' x1='135' y1='115' x2='395' y2='395' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23ff3b30'/%3E%3Cstop offset='24%25' stop-color='%23ef4444'/%3E%3Cstop offset='50%25' stop-color='%232563eb'/%3E%3Cstop offset='68%25' stop-color='%230284c7'/%3E%3Cstop offset='88%25' stop-color='%2310b981'/%3E%3Cstop offset='100%25' stop-color='%2334c759'/%3E%3C/linearGradient%3E%3CradialGradient id='gr' cx='22%25' cy='18%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ff3b30'/%3E%3Cstop offset='100%25' stop-color='%23ff3b30' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='gb' cx='24%25' cy='80%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%231d4ed8' stop-opacity='0.95'/%3E%3Cstop offset='100%25' stop-color='%232563eb' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='gg' cx='84%25' cy='68%25' r='58%25'%3E%3Cstop offset='0%25' stop-color='%2330d158'/%3E%3Cstop offset='100%25' stop-color='%2310b981' stop-opacity='0'/%3E%3C/radialGradient%3E%3CclipPath id='dChip'%3E%3Cpath d='M 122 170 L 194 98 H 262 C 358 98 420 162 420 256 C 420 350 358 414 262 414 H 170 C 143.5 414 122 392.5 122 366 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23dChip)'%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gp)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gb)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gr)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gg)'/%3E%3C/g%3E%3C/svg%3E" />
   <link rel="icon" href="../favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
-  <link rel="manifest" href="../manifest.webmanifest" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://docdiff.app/en/" />
   <meta property="og:site_name" content="Doc Diff" />
@@ -255,6 +255,7 @@
   --topbar-h: 52px;
   --list-w: 336px;
   --ruler-w: 14px;
+  --pane-pad-x: var(--sp-6);    /* outer padding of a document pane; the inner side is --sp-4 */
 
   --background: 0 0% 97.5%;
   --foreground: 215 25% 13%;
@@ -625,6 +626,14 @@ body:not(.is-comparing) .topbar {
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
+}
+/* Direct swap next to the file pair: quieter than the stepper, same 44 px target */
+.tb-swap {
+  color: hsl(var(--muted-foreground));
+}
+.tb-swap:hover,
+.tb-swap:focus-visible {
+  color: hsl(var(--foreground));
 }
 .tb-icon-btn.sm {
   width: 30px;
@@ -1149,7 +1158,7 @@ body.is-comparing .empty-launchpad {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
-  color: hsl(var(--primary));
+  color: hsl(var(--primary-ink));
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -1480,10 +1489,12 @@ body.is-dragging-file .drop-slot-btn {
 }
 .scope-can li::before {
   content: "✓";
+  content: "✓" / "";
   color: hsl(var(--success-ink));
 }
 .scope-cannot li::before {
   content: "–";
+  content: "–" / "";
   color: hsl(var(--destructive-ink));
 }
 
@@ -1598,7 +1609,7 @@ body:not(.view-inline) #pane-right { grid-column: 3; }
 /* The hidden stacked pane spans the ruler too; the extra padding keeps its text width */
 body:not(.view-inline) #pane-unified {
   grid-column: 1 / 4;
-  padding-right: calc(var(--sp-6) + var(--ruler-w));
+  padding-right: calc(var(--pane-pad-x) + var(--ruler-w));
 }
 
 body.view-inline #pane-left,
@@ -1616,7 +1627,7 @@ body:not(.view-inline) #pane-unified {
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  padding: 0 var(--sp-6) var(--sp-7);
+  padding: 0 var(--pane-pad-x) var(--sp-7);
   background: hsl(var(--card));
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--input)) transparent;
@@ -1654,6 +1665,15 @@ body:not(.view-inline) #pane-unified {
   .doc-pane-unified:focus-visible > .pane-caption {
     color: hsl(var(--foreground));
     box-shadow: inset 0 -2px 0 hsl(var(--ring));
+  }
+}
+
+/* Narrow desktops (1200–1439 px): the list and the outer padding give the text some room back.
+   Both panes shrink by the same amount, so unchanged paragraphs still wrap identically. */
+@media (min-width: 1200px) and (max-width: 1439px) {
+  :root {
+    --list-w: 304px;
+    --pane-pad-x: var(--sp-5);
   }
 }
 
@@ -3653,8 +3673,8 @@ body.list-open .toast-region {
 </head>
 <body>
 
-  <input type="file" id="file-input-left" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
-  <input type="file" id="file-input-right" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
+  <input type="file" id="file-input-left" accept=".pdf,.docx,.txt,.md,.html" multiple style="display:none" />
+  <input type="file" id="file-input-right" accept=".pdf,.docx,.txt,.md,.html" multiple style="display:none" />
   <input type="file" id="file-input-session" accept=".docdiff" style="display:none" />
 
   <!-- ── 1. TOP BAR: the only permanent chrome of the comparison (≈52 px) ───────────────── -->
@@ -3739,6 +3759,10 @@ body.list-open .toast-region {
           </div>
         </div>
       </div>
+      <!-- Direct swap: forwards to #btn-swap-docs (same handler, same unsaved-work guard) -->
+      <button type="button" class="tb-icon-btn tb-swap compare-only hide-phone" id="btn-swap-quick" aria-label="Swap old and new version" data-i18n-label="swapBtn" data-tooltip="">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+      </button>
     </div>
 
     <div class="tb-center compare-only">
@@ -3958,7 +3982,7 @@ body.list-open .toast-region {
 
         <section class="landing-section" aria-labelledby="how-title">
           <h2 id="how-title" data-i18n="howTitle">How it works</h2>
-          <ol class="how-steps">
+          <ol class="how-steps" role="list">
             <li><span class="how-num" aria-hidden="true">1</span><span><strong data-i18n="how1Title">Choose two versions</strong> <span data-i18n="how1Text">As PDF, Word file or pasted text. The files are only read inside this browser tab.</span></span></li>
             <li><span class="how-num" aria-hidden="true">2</span><span><strong data-i18n="how2Title">Go through the changes</strong> <span data-i18n="how2Text">Removed text is struck through in red, added text is marked green. You can accept or reject each change.</span></span></li>
             <li><span class="how-num" aria-hidden="true">3</span><span><strong data-i18n="how3Title">Save the result if you need it</strong> <span data-i18n="how3Text">As a clean final version (Word in the original format, or PDF) or as a comparison with tracked changes.</span></span></li>
@@ -3983,7 +4007,7 @@ body.list-open .toast-region {
           <div class="scope-grid">
             <div class="scope-col scope-can">
               <h3 data-i18n="scopeCanTitle">Can</h3>
-              <ul>
+              <ul role="list">
                 <li data-i18n="scopeCan1">Compare PDFs with a text layer, Word files (.docx) and plain text – also mixed, e.g. a PDF against a Word file</li>
                 <li data-i18n="scopeCan2">Show changes word by word – including changed numbers, dates and amounts</li>
                 <li data-i18n="scopeCan3">Show page breaks as in the original; repeating headers and footers are left out</li>
@@ -3994,7 +4018,7 @@ body.list-open .toast-region {
             </div>
             <div class="scope-col scope-cannot">
               <h3 data-i18n="scopeCannotTitle">Can’t</h3>
-              <ul>
+              <ul role="list">
                 <li data-i18n="scopeCannot1">Read scanned PDFs – there is no text recognition (OCR)</li>
                 <li data-i18n="scopeCannot2">Open old Word files (.doc) – please save them as .docx first</li>
                 <li data-i18n="scopeCannot3">Compare formatting – bold, italics, table layout and images are ignored; only the text is compared</li>
@@ -4293,6 +4317,10 @@ const I18N = {
     metaParas: '{n} Absätze',
     metaParasOne: '1 Absatz',
     demoLabel: 'Beispiel',
+    filterNumeric: 'Zahlen, Währungen & Prozent',
+    stepLabel_numeric: 'mit Zahlenänderungen',
+    reviewAcceptAll: 'Alle offenen annehmen ({n})',
+    reviewCompleteExport: 'Alles geprüft · Word-Endfassung exportieren',
     dockLabel: 'Änderungen durchgehen',
     prevLabel: 'Vorherige Änderung',
     nextLabel: 'Nächste Änderung',
@@ -4367,6 +4395,7 @@ const I18N = {
     // ── Toasts & announcements ───────────────────────────────────────────
     toastWord: 'Word-Datei gespeichert: {name}',
     toastWordOriginal: 'Word-Datei im Originalformat gespeichert: {name}',
+    confirmWordFallback: 'Das Originalformat konnte nicht sicher erhalten werden. Stattdessen ein neu gesetztes Word-Dokument herunterladen? Tabellen, Bilder und Seitenlayout können vom Original abweichen.',
     noticeWordFallback: 'Gespeichert: {name}. Das Originalformat ließ sich für diese Datei nicht sicher übernehmen (z. B. wegen Änderungen in Fußnoten oder Textfeldern). Die Word-Datei wurde deshalb neu gesetzt; der Text ist vollständig.',
     toastHtml: 'Bericht gespeichert: {name}',
     toastMd: 'Markdown-Bericht gespeichert: {name}',
@@ -4441,9 +4470,9 @@ const I18N = {
     acceptBtn: 'Annehmen',
     rejectBtn: 'Ablehnen',
     editBtn: 'Bearbeiten',
-    reopenBtn: 'Rückgängig',
-    acceptTitle: 'Annehmen (A)',
-    rejectTitle: 'Ablehnen (R)',
+    reopenBtn: 'Prüfung zurücknehmen',
+    acceptTitle: 'Änderung annehmen (A)',
+    rejectTitle: 'Ablehnen – alte Fassung wiederherstellen (R)',
     editTitle: 'Bearbeiten (E)',
     reopenTitle: 'Prüfung zurücknehmen',
     rejectedInsNote: 'Abgelehnt – hinzugefügter Absatz danach entfernt',
@@ -4520,7 +4549,7 @@ const I18N = {
     manualRight: 'Eingefügter Text (neue Fassung)',
     sessionDiscardTitle: 'Ungespeicherte Arbeit verwerfen?',
     sessionDiscardBody:
-      'Sie haben Änderungen geprüft oder Absätze bearbeitet, und dieser Stand ist noch nicht gespeichert oder exportiert. Wenn Sie ihn verwerfen, geht diese Arbeit verloren.',
+      'Sie haben Änderungen geprüft oder Absätze bearbeitet, und dieser Arbeitsstand ist noch nicht als .docdiff-Datei gespeichert. Wenn Sie ihn verwerfen, geht diese Arbeit verloren.',
     sessionDiscardConfirm: 'Verwerfen',
     sessionSaveContinue: 'Arbeitsstand speichern',
     sessionErrorTitle: 'Arbeitsstand kann nicht geöffnet werden',
@@ -4706,6 +4735,10 @@ const I18N = {
     metaParas: '{n} paragraphs',
     metaParasOne: '1 paragraph',
     demoLabel: 'Example',
+    filterNumeric: 'Numbers, currencies & percentages',
+    stepLabel_numeric: 'with number changes',
+    reviewAcceptAll: 'Accept all open ({n})',
+    reviewCompleteExport: 'Review complete · Export final Word document',
     dockLabel: 'Go through the changes',
     prevLabel: 'Previous change',
     nextLabel: 'Next change',
@@ -4780,6 +4813,7 @@ const I18N = {
     // ── Toasts & announcements ───────────────────────────────────────────
     toastWord: 'Word file saved: {name}',
     toastWordOriginal: 'Word file saved in the original format: {name}',
+    confirmWordFallback: 'The original formatting could not be preserved reliably. Download a newly typeset Word document instead? Tables, images and page layout may differ from the original.',
     noticeWordFallback: 'Saved: {name}. The original format could not be kept reliably for this file (for example because of changes in footnotes or text boxes), so the Word file was typeset anew; the text is complete.',
     toastHtml: 'Report saved: {name}',
     toastMd: 'Markdown report saved: {name}',
@@ -4854,9 +4888,9 @@ const I18N = {
     acceptBtn: 'Accept',
     rejectBtn: 'Reject',
     editBtn: 'Edit',
-    reopenBtn: 'Undo',
-    acceptTitle: 'Accept (A)',
-    rejectTitle: 'Reject (R)',
+    reopenBtn: 'Undo review',
+    acceptTitle: 'Accept change (A)',
+    rejectTitle: 'Reject – restore the old version (R)',
     editTitle: 'Edit (E)',
     reopenTitle: 'Undo the review of this change',
     rejectedInsNote: 'Rejected – added paragraph below removed',
@@ -4933,7 +4967,7 @@ const I18N = {
     manualRight: 'Pasted text (new version)',
     sessionDiscardTitle: 'Discard unsaved work?',
     sessionDiscardBody:
-      'You have reviewed changes or edited paragraphs, and this work has not been saved or exported yet. If you discard it, it will be lost.',
+      'You have reviewed changes or edited paragraphs, and this work has not been saved as a .docdiff session file yet. If you discard it, it will be lost.',
     sessionDiscardConfirm: 'Discard',
     sessionSaveContinue: 'Save work',
     sessionErrorTitle: 'Cannot open saved work',
@@ -8408,6 +8442,18 @@ function getItemPage(item) {
   return item.ghost ? item.ghost.pageNum || 1 : item.row.pageNum || 1;
 }
 
+// Inspect only changed text: an unchanged clause number must not trigger this filter.
+function itemHasNumericChange(item) {
+  if (item.ghost) return computeCleanWordDiff(item.ghost.leftText || '', item.ghost.rightText || '').some(part =>
+    (part.added || part.removed) && /[0-9\p{Sc}%]/u.test(part.value));
+  const row = item.row;
+  if (row.wordDiffs && row.wordDiffs.length) {
+    return row.wordDiffs.some(part => (part.added || part.removed) && /[0-9\p{Sc}%]/u.test(part.value));
+  }
+  if (row.type === 'modified') return false;
+  return /[0-9\p{Sc}%]/u.test((row.rightBlock || row.leftBlock || {}).text || '');
+}
+
 // List items under the active list filter (search never filters the list).
 function getFilteredListItems() {
   const f = state.sidebarFilter;
@@ -8415,7 +8461,7 @@ function getFilteredListItems() {
   return state.listItems.filter(item => {
     if (s === 'open' && item.status !== 'open') return false;
     if (s === 'reviewed' && item.status === 'open') return false;
-    return f === 'all' || item.type === f;
+    return f === 'all' || (f === 'numeric' ? itemHasNumericChange(item) : item.type === f);
   });
 }
 // Kept for callers and QA scripts written against the earlier name.
@@ -8425,6 +8471,21 @@ function updateSidebarHeaderState() {
   const total = state.listItems.length;
   const counts = getChangeCounts();
   const review = getReviewCounts();
+  let action = document.getElementById('btn-review-all');
+  if (!action) {
+    action = document.createElement('button');
+    action.id = 'btn-review-all';
+    action.type = 'button';
+    action.className = 'btn btn-ghost';
+    action.addEventListener('click', () => {
+      if (getReviewCounts().open) acceptAllOpenChanges();
+      else handleExportAction('word-final');
+    });
+    document.getElementById('sidebar-list').before(action);
+  }
+  action.hidden = !total;
+  action.disabled = !canReviewNow();
+  action.textContent = review.open ? formatMsg('reviewAcceptAll', { n: review.open }) : t('reviewCompleteExport');
   const filtered = state.sidebarFilter !== 'all' || state.statusFilter !== 'all';
   document.getElementById('list-title').textContent = filtered
     ? formatMsg('listTitleFiltered', { k: getFilteredListItems().length, n: total })
@@ -8438,6 +8499,11 @@ function updateSidebarHeaderState() {
 
   // One filter: "Alle", a review status or a kind of change, each with its count.
   const select = document.getElementById('list-filter');
+  if (!select.querySelector('option[value="numeric"]')) {
+    const option = document.createElement('option');
+    option.value = 'numeric';
+    document.getElementById('lf-group-kind').appendChild(option);
+  }
   const value = state.statusFilter !== 'all' ? state.statusFilter : state.sidebarFilter;
   const options = [
     ['all', 'filterAll', total],
@@ -8446,6 +8512,7 @@ function updateSidebarHeaderState() {
     ['modified', 'filterMod', counts.mod],
     ['inserted', 'filterIns', counts.ins],
     ['deleted', 'filterDel', counts.del],
+    ['numeric', 'filterNumeric', state.listItems.filter(itemHasNumericChange).length],
   ];
   for (const [v, key, n] of options) {
     const opt = select.querySelector(`option[value="${v}"]`);
@@ -9434,11 +9501,16 @@ function isHeaderFooterItem(item) {
 }
 
 // Running headers and footers repeat on every page with the page number in them: the same
-// change on several pages is one decision. Numbers are ignored when comparing the lines; the
-// changed words themselves must be identical.
+// change on several pages is one decision. Normalize digits only when exact changed tokens
+// are available; rejected entries lack those tokens and must retain their substantive numbers.
 function headerFooterGroupKey(item) {
   if (item.type !== 'modified') return '';
-  const norm = s => String(s || '').replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+  const hasTokens = !item.ghost && Array.isArray(item.row.wordDiffs) &&
+    item.row.wordDiffs.some(d => d.added || d.removed);
+  const norm = s => {
+    const text = String(s || '');
+    return (hasTokens ? text.replace(/\d+/g, '#') : text).replace(/\s+/g, ' ').trim();
+  };
   const left = item.ghost ? item.ghost.leftText : item.row.leftBlock ? item.row.leftBlock.text : '';
   const right = item.ghost ? item.ghost.rightText : item.row.rightBlock ? item.row.rightBlock.text : '';
   let changed = '';
@@ -9876,6 +9948,35 @@ function runReviewAction(action, fromList) {
   }
   applyPendingRowFocusIfIdle();
   return done;
+}
+
+// All open list entries in this comparison, including hidden/filtered entries and every
+// member of a grouped header/footer change. Revalidate after the confirmation dialog.
+async function acceptAllOpenChanges() {
+  if (!canReviewNow()) return false;
+  const items = state.listItems.filter(item => item.status === 'open' && !item.ghost);
+  if (!items.length) return false;
+  const leftText = state.leftText, rightText = state.rightText;
+  const signature = JSON.stringify(items.map(item => itemMembers(item).map(m => m.row.reviewKey)));
+  const de = state.lang === 'de';
+  const choice = await showSessionDialog({
+    title: de ? 'Alle offenen Änderungen annehmen?' : 'Accept all open changes?',
+    body: de
+      ? `Alle ${items.length} offenen Einträge im gesamten Vergleich annehmen, einschließlich ausgeblendeter und gefilterter Einträge sowie aller Seiten gruppierter Kopf-/Fußzeilen? Dies ist mit einem Rückgängig-Schritt umkehrbar.`
+      : `Accept all ${items.length} open entries in the entire comparison, including hidden and filtered entries and every page of grouped headers/footers? This can be undone in one step.`,
+    confirmLabel: de ? 'Alle annehmen' : 'Accept all',
+    cancelLabel: de ? 'Abbrechen' : 'Cancel',
+  });
+  if (choice !== 'confirm' || !canReviewNow() || state.leftText !== leftText || state.rightText !== rightText) return false;
+  const current = state.listItems.filter(item => item.status === 'open' && !item.ghost);
+  if (JSON.stringify(current.map(item => itemMembers(item).map(m => m.row.reviewKey))) !== signature) return false;
+  pushUndoSnapshot();
+  for (const item of current) {
+    for (const m of itemMembers(item)) state.reviews[m.row.reviewKey] = { status: 'accepted', type: m.row.type };
+  }
+  refreshReviewState();
+  announce(de ? `${items.length} Einträge angenommen.` : `Accepted ${items.length} entries.`);
+  return true;
 }
 
 /* ── Overview ruler: where the changes are, and which part of the document is in view ─── */
@@ -10659,6 +10760,24 @@ window.addEventListener('resize', () => {
     scheduleRulerDraw();
   }, 60);
 });
+
+/* ── Direct swap in the top bar ─────────────────────────────────────────────
+ * A second entry point to the swap in the documents popover. It only forwards the click, so the
+ * swap itself (and the guard in front of it that protects unsaved review work) stays in one place.
+ * The aria-label comes from data-i18n-label; the visual tooltip reads the same text on demand,
+ * so it follows the language without a separate update step. */
+const btnSwapQuick = document.getElementById('btn-swap-quick');
+if (btnSwapQuick) {
+  const syncSwapTooltip = () => btnSwapQuick.setAttribute('data-tooltip', t('swapBtn'));
+  syncSwapTooltip();
+  // Runs on the button itself, before the document-level tooltip handlers read the attribute.
+  btnSwapQuick.addEventListener('pointerover', syncSwapTooltip);
+  btnSwapQuick.addEventListener('focusin', syncSwapTooltip);
+  btnSwapQuick.addEventListener('click', () => {
+    hideTooltip();
+    document.getElementById('btn-swap-docs').click();
+  });
+}
 
 /* ── Word export: a real .docx (OOXML) with tracked changes, built in the browser ──
  * Everything here is dependency-free: a minimal ZIP writer (STORE, CRC-32) plus hand-written
@@ -12010,14 +12129,17 @@ async function exportWord(kind) {
       if (typeof console !== 'undefined') console.warn('Doc Diff: original-format Word export not possible:', err && err.message);
     }
   }
+  if (fellBack && !window.confirm(t('confirmWordFallback'))) return false;
   if (!bytes) bytes = buildGeneratedDocx(kind, date);
-  const filename = kind === 'final' ? buildFinalFileName('docx') : buildExportFileName('exportFileRedline', 'docx');
+  let filename = kind === 'final' ? buildFinalFileName('docx') : buildExportFileName('exportFileRedline', 'docx');
+  if (fellBack) filename = filename.replace(/\.docx$/, '_Generated.docx');
   downloadBlob(bytes, DOCX_MIME, filename);
   if (fellBack && typeof showImportNotice === 'function') {
     showImportNotice(tf('noticeWordFallback', { name: filename }), 'warning');
   } else if (typeof showToast === 'function') {
     showToast(tf(source ? 'toastWordOriginal' : 'toastWord', { name: filename }));
   }
+  return true;
 }
 
 function startPrint(kind) {
@@ -12115,9 +12237,24 @@ if (typeof document !== 'undefined' && document.body && typeof MutationObserver 
 
 /* ── ZIP reading (all entries, as bytes) ─────────────────────────────────── */
 
-async function inflateRaw(bytes) {
+async function inflateRaw(bytes, limit) {
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  const reader = stream.getReader();
+  const chunks = [];
+  let size = 0;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > limit) throw new Error('zip: decompression limit exceeded');
+      chunks.push(value);
+    }
+  } finally { await reader.cancel().catch(() => {}); }
+  const result = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.length; }
+  return result;
 }
 
 /** Reads every entry of a ZIP archive: [{ name, data: Uint8Array }] in archive order. */
@@ -12133,9 +12270,12 @@ async function readZipEntries(input) {
   }
   if (eocd < 0) throw new Error('zip: no central directory');
   const count = dv.getUint16(eocd + 10, true);
+  if (count > 4096) throw new Error('zip: entry count limit exceeded');
   let p = dv.getUint32(eocd + 16, true);
   const utf8 = new TextDecoder('utf-8');
   const out = [];
+  const entryLimit = 64 * 1024 * 1024, totalLimit = 256 * 1024 * 1024;
+  let total = 0;
   for (let n = 0; n < count; n++) {
     if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('zip: bad central directory');
     const method = dv.getUint16(p + 10, true);
@@ -12148,10 +12288,15 @@ async function readZipEntries(input) {
     p += 46 + nameLen + extraLen + commentLen;
     const dataStart = localOffset + 30 + dv.getUint16(localOffset + 26, true) + dv.getUint16(localOffset + 28, true);
     const raw = bytes.subarray(dataStart, dataStart + compSize);
+    const limit = Math.min(entryLimit, totalLimit - total);
     let data;
-    if (method === 0) data = raw.slice();
-    else if (method === 8) data = await inflateRaw(raw);
+    if (method === 0) {
+      if (raw.length > limit) throw new Error('zip: decompression limit exceeded');
+      data = raw.slice();
+    }
+    else if (method === 8) data = await inflateRaw(raw, limit);
     else throw new Error(`zip: unsupported method ${method}`);
+    total += data.length;
     out.push({ name, data });
   }
   return out;
@@ -12929,11 +13074,15 @@ function rewriteDocxRow(unit, xml, ctx, step, rev, edit) {
     step.open ? (oldText === null ? [{ value: newText, added: true }] : computeCleanWordDiff(oldText, newText)) : [{ value: newText }];
   const writeCell = (cell, tokens) => {
     const paras = cell.paras.filter((p, i) => cell.texts[i]);
+    if (paras.length > 1) throw new Error('docx: cannot safely rewrite a multi-paragraph cell');
     const first = paras[0] || cell.paras[0];
     if (!first) throw new Error('docx: cell without paragraph');
     edit(first.start, first.end, rewriteDocxParagraph(first, xml, ctx, tokens, 0, rev, ''));
     for (const other of paras.slice(1)) edit(other.start, other.end, rewriteDocxParagraph(other, xml, ctx, [], 0, rev, ''));
   };
+  if (filled.some(c => c.text.includes(' · ')) ||
+      (oldCells && oldCells.length !== filled.length) ||
+      newCells.length !== filled.length) throw new Error('docx: ambiguous table row');
   if (newCells.length === filled.length) {
     newCells.forEach((text, i) => {
       const cell = filled[i];
@@ -12943,12 +13092,7 @@ function rewriteDocxRow(unit, xml, ctx, step, rev, edit) {
     });
     return newCells.join(' · ');
   }
-  // The number of filled cells changed: the whole row text goes into the first cell.
-  const target = filled[0] || unit.cells[0];
-  if (!target) throw new Error('docx: row without cells');
-  writeCell(target, step.open && step.oldBlock ? computeCleanWordDiff(docxKey(step.oldBlock.text), docxKey(step.block.text)) : [{ value: docxKey(step.block.text) }]);
-  for (const cell of filled) if (cell !== target) writeCell(cell, []);
-  return docxKey(step.block.text);
+  throw new Error('docx: ambiguous table row');
 }
 
 /* ── Entry point ────────────────────────────────────────────────────────── */
@@ -13091,17 +13235,20 @@ async function extractPdfText(arrayBuffer) {
   // map them to clear, translated messages. A page that cannot be read fails the whole file
   // rather than silently dropping its text from the comparison.
   const pages = [];
+  const task = window.pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false });
   try {
-    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
+    const pdf = await task.promise;
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      pages.push(buildPdfPageLines(textContent.items, page.view));
+      try {
+        const textContent = await page.getTextContent();
+        pages.push(buildPdfPageLines(textContent.items, page.view));
+      } finally { page.cleanup(); }
     }
   } catch (err) {
     if (err instanceof ImportError) throw err;
     throw new ImportError(err && err.name === 'PasswordException' ? 'errPdfPassword' : 'errPdfCorrupt');
-  }
+  } finally { await task.destroy(); }
   const { text, emptyPages } = assemblePdfText(pages);
   if (pages.length === 0 || emptyPages.length === pages.length) {
     // No text layer at all: a scan or an image-only PDF. OCR is not available.
@@ -13115,50 +13262,19 @@ async function extractPdfText(arrayBuffer) {
 
 /* ── DOCX ──────────────────────────────────────────────────────────────── */
 
-// Minimal ZIP reader (central directory + stored/deflate entries) for the few XML parts
-// Mammoth does not expose. Returns null when the archive cannot be read this way.
+// Validate the entire archive with the bounded reader before Mammoth decompresses it.
+// Returning null on a budget failure would let the unbounded fallback run anyway.
 async function readZipTextEntries(arrayBuffer, wantedNames) {
   try {
-    const bytes = new Uint8Array(arrayBuffer);
-    const dv = new DataView(arrayBuffer);
-    let eocd = -1;
-    for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
-      if (dv.getUint32(i, true) === 0x06054b50) {
-        eocd = i;
-        break;
-      }
-    }
-    if (eocd < 0) return null;
-    const count = dv.getUint16(eocd + 10, true);
-    let p = dv.getUint32(eocd + 16, true);
+    const entries = await readZipEntries(arrayBuffer);
     const utf8 = new TextDecoder('utf-8');
     const out = {};
-    for (let n = 0; n < count; n++) {
-      if (dv.getUint32(p, true) !== 0x02014b50) return null;
-      const method = dv.getUint16(p + 10, true);
-      const compSize = dv.getUint32(p + 20, true);
-      const nameLen = dv.getUint16(p + 28, true);
-      const extraLen = dv.getUint16(p + 30, true);
-      const commentLen = dv.getUint16(p + 32, true);
-      const localOffset = dv.getUint32(p + 42, true);
-      const name = utf8.decode(bytes.subarray(p + 46, p + 46 + nameLen));
-      p += 46 + nameLen + extraLen + commentLen;
-      if (!wantedNames.includes(name)) continue;
-      const dataStart =
-        localOffset + 30 + dv.getUint16(localOffset + 26, true) + dv.getUint16(localOffset + 28, true);
-      const data = bytes.subarray(dataStart, dataStart + compSize);
-      if (method === 0) {
-        out[name] = utf8.decode(data);
-      } else if (method === 8 && typeof DecompressionStream !== 'undefined') {
-        const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-        out[name] = utf8.decode(await new Response(stream).arrayBuffer());
-      } else {
-        return null;
-      }
+    for (const entry of entries) {
+      if (wantedNames.includes(entry.name)) out[entry.name] = utf8.decode(entry.data);
     }
     return out;
   } catch (err) {
-    return null;
+    throw new ImportError('errDocxCorrupt');
   }
 }
 
@@ -13790,6 +13906,8 @@ window.addEventListener('drop', e => {
 
 async function handleDropFiles(files, targetSide) {
   if (!files || !files.length) return;
+  // FileList is live: the first upload clears its input, including the second file.
+  files = Array.from(files);
   if (files.length >= 2) {
     clearImportNotice();
     await handleFileUpload(files[0], 'left', { keepNotice: true });
@@ -13830,8 +13948,8 @@ const fileInputLeft = document.getElementById('file-input-left');
 const fileInputRight = document.getElementById('file-input-right');
 document.getElementById('btn-upload-left').addEventListener('click', () => fileInputLeft.click());
 document.getElementById('btn-upload-right').addEventListener('click', () => fileInputRight.click());
-fileInputLeft.addEventListener('change', e => handleFileUpload(e.target.files[0], 'left'));
-fileInputRight.addEventListener('change', e => handleFileUpload(e.target.files[0], 'right'));
+fileInputLeft.addEventListener('change', e => handleDropFiles(e.target.files, 'left'));
+fileInputRight.addEventListener('change', e => handleDropFiles(e.target.files, 'right'));
 
 document.getElementById('btn-clear-left').addEventListener('click', () => {
   cancelPendingUploads('left');
@@ -14308,7 +14426,7 @@ function isShortcutFocusContext(el) {
   if (isTextEntryElement(el) || (el.closest && el.closest('[contenteditable], .clause-inline-editor, dialog'))) {
     return false;
   }
-  return Boolean(el.closest && el.closest('#pane-left, #pane-right, #pane-unified, #sidebar-list'));
+  return Boolean(el.closest && el.closest('#pane-left, #pane-right, #pane-unified, #sidebar-list, .review-bar, .stepper'));
 }
 
 window.addEventListener('keydown', e => {
@@ -14420,8 +14538,12 @@ function clearComparison() {
 function toggleLanguage() {
   const langHint = document.getElementById('lang-hint');
   if (langHint) langHint.hidden = true;
+  const previousSample = SAMPLES[state.lang] || SAMPLES.de;
+  const pristineDemo = state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO' &&
+    state.leftText === previousSample.v1 && state.rightText === previousSample.v2 &&
+    Object.keys(state.reviews).length === 0 && state.undoStack.length === 0 && state.redoStack.length === 0;
   state.lang = state.lang === 'de' ? 'en' : 'de';
-  if (state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO') {
+  if (pristineDemo) {
     const sample = SAMPLES[state.lang] || SAMPLES.de;
     state.leftName = t('sampleLeftName');
     state.leftText = sample.v1;
@@ -14769,8 +14891,7 @@ window.addEventListener('DOMContentLoaded', () => {
 /* ── Work-Loss Protection: Unsaved-Changes Guard & Saved Work (.docdiff) ──
  *
  * Nothing is ever written to browser storage. Work is protected in two ways:
- *  1. A dirty flag (inline edits, accepted / rejected changes since the last load, save or
- *     export) drives the native `beforeunload` prompt and an in-app dialog in front of every
+ *  1. A dirty flag (inline edits, accepted / rejected changes since the last load or session save) drives the native `beforeunload` prompt and an in-app dialog in front of every
  *     action that would throw this work away ("Abbrechen / Arbeitsstand speichern / Verwerfen").
  *  2. "Arbeitsstand speichern…" downloads a self-describing JSON file (.docdiff) to the
  *     user's own disk; "Arbeitsstand öffnen…" validates it strictly and restores it through
@@ -14804,7 +14925,7 @@ const REVIEW_TYPES = ['modified', 'inserted', 'deleted'];
 const sessionTracker = {
   // Right-hand text as it was last loaded (before any inline edits).
   originalRightText: state.rightText,
-  // Right-hand text and review status at the last "clean point" (load, save, export).
+  // Right-hand text and review status at the last "clean point" (load or session save).
   cleanRightText: state.rightText,
   cleanReviews: serializeReviews(),
   // Right-hand text seen by the previous runComparison call.
@@ -14877,16 +14998,21 @@ wrapGlobalFunction('runComparison', original =>
 wrapGlobalFunction('resetEditHistory', original =>
   function resetEditHistoryForLoad() {
     sessionTracker.editPending = false;
-    return original.apply(this, arguments);
+    const result = original.apply(this, arguments);
+    if (!sessionTracker.restoring) {
+      sessionTracker.originalRightText = state.rightText;
+      markSessionClean();
+    }
+    return result;
   }
 );
 
 wrapGlobalFunction('handleFileUpload', original =>
   async function guardedFileUpload(file, side) {
-    if (file && side === 'right' && !sessionTracker.bypassGuard && isSessionDirty()) {
+    if (file && !sessionTracker.bypassGuard && isSessionDirty()) {
       const ok = await confirmDiscardEdits();
       if (!ok) {
-        const input = document.getElementById('file-input-right');
+        const input = document.getElementById(`file-input-${side}`);
         if (input) input.value = '';
         return undefined;
       }
@@ -14897,12 +15023,15 @@ wrapGlobalFunction('handleFileUpload', original =>
 
 wrapGlobalFunction('handleDropFiles', original =>
   async function guardedDropFiles(files, targetSide) {
-    const replacesRight = files && (files.length >= 2 || (files.length === 1 && targetSide === 'right'));
-    if (replacesRight && !sessionTracker.bypassGuard && isSessionDirty()) {
-      if (!(await confirmDiscardEdits())) return undefined;
+    const replacesDocument = files && files.length > 0;
+    if (replacesDocument && !sessionTracker.bypassGuard) {
+      // Keep the pair under one guard even when it starts clean: replacing the left
+      // side can reset reviews and otherwise cause a second prompt halfway through.
+      const pickedFiles = Array.from(files);
+      if (isSessionDirty() && !(await confirmDiscardEdits())) return undefined;
       sessionTracker.bypassGuard++;
       try {
-        return await original.apply(this, arguments);
+        return await original.call(this, pickedFiles, targetSide);
       } finally {
         sessionTracker.bypassGuard--;
       }
@@ -15001,7 +15130,7 @@ async function confirmDiscardEdits() {
     discardLabel: t('sessionDiscardConfirm'),
   });
   if (choice === 'confirm') {
-    saveSession();
+    if (!saveSession()) return false;
     return true;
   }
   return choice === 'discard';
@@ -15019,23 +15148,20 @@ function showSessionError(messageKey) {
 const SESSION_GUARDED_CLICKS = [
   { selector: '#btn-clear' },
   { selector: '#btn-clear-right' },
+  { selector: '#btn-clear-left' },
   { selector: '#lp-clear-right' },
   { selector: '#btn-swap-docs' },
   { selector: '.btn-load-sample' },
   { selector: '#btn-help-sample' },
   {
     // The paste dialog is pre-filled with the edited text; only an actual
-    // change of the right-hand text discards edits.
+    // change of either document resets review decisions.
     selector: '#btn-apply-modal',
     when: () => {
       const ta = document.getElementById('textarea-right');
-      return !!ta && ta.value !== pasteModalShown.right;
+      const left = document.getElementById('textarea-left');
+      return (!!ta && ta.value !== pasteModalShown.right) || (!!left && left.value !== pasteModalShown.left);
     },
-  },
-  {
-    // Toggling the language while the sample is shown reloads the sample.
-    selector: '#btn-lang, #menu-lang, #footer-lang-link',
-    when: () => state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO',
   },
 ];
 
@@ -15205,9 +15331,17 @@ function saveSession() {
   }
   const name = buildSessionFileName();
   const json = JSON.stringify(buildSessionPayload(), null, 1);
+  if (new Blob([json]).size > SESSION_MAX_FILE_BYTES) {
+    showSessionDialog({
+      title: state.lang === 'de' ? 'Arbeitsstand kann nicht gespeichert werden' : 'Cannot save work',
+      body: t('sessionErrorTooLarge'), confirmLabel: t('sessionOk'),
+    });
+    return false;
+  }
   downloadSessionFile(json, name);
   markSessionClean();
   if (typeof showToast === 'function') showToast(formatMsg('toastSession', { name }));
+  return true;
 }
 
 /* ── Opening: strict validation, then restore ───────────────────────────── */
@@ -15486,17 +15620,9 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-session-action="save"]')) saveSession();
 });
 
-// Downloading the result counts as saving it. Copying and printing do not: the
-// clipboard is volatile, and neither a failed copy nor a cancelled print dialog can be
-// detected, so they must not silence the unsaved-changes warning.
-const SESSION_CLEANING_EXPORTS = ['txt', 'word', 'html', 'md'];
-document.addEventListener('click', e => {
-  if (!(e.target instanceof Element)) return;
-  const item = e.target.closest('#export-menu [data-export]');
-  if (item && SESSION_CLEANING_EXPORTS.includes(item.getAttribute('data-export'))) {
-    markSessionClean();
-  }
-});
+// Result exports do not preserve review decisions, source documents or undo history.
+// Only saving a .docdiff session establishes a clean point.
+const SESSION_CLEANING_EXPORTS = [];
 
 // A dropped .docdiff file is saved work, never a document to compare. This
 // capture listener runs before the pane / landing drop handlers.

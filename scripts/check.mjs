@@ -147,7 +147,7 @@ for (const siteFile of ['CNAME', 'og-image.png', 'og-image-en.png', 'impressum.h
 assert.equal(fs.readFileSync(path.join(root, 'site', 'CNAME'), 'utf8').trim(), 'docdiff.app', 'CNAME must be docdiff.app');
 
 // 7. Search engines and assistants: both language pages, head metadata, structured data, crawl files
-for (const siteFile of ['en/index.html', 'llms.txt', 'llms-full.txt', 'manifest.webmanifest', 'favicon.ico', 'apple-touch-icon.png']) {
+for (const siteFile of ['en/index.html', 'llms.txt', 'llms-full.txt', 'manifest.webmanifest', 'en/manifest.webmanifest', 'favicon.ico', 'apple-touch-icon.png']) {
   assert.ok(fs.existsSync(path.join(root, 'site', siteFile)), `Missing required site file: site/${siteFile}`);
 }
 const enHtmlPath = path.join(root, 'site', 'en', 'index.html');
@@ -207,12 +207,19 @@ for (const page of [
   assert.equal(metaContent(head, 'name', 'application-name'), 'Doc Diff');
   assert.ok(head.includes('<meta name="theme-color"'), `${where}: theme-color missing`);
 
-  // Same-site assets resolve from the page's folder (e.g. ../favicon.ico from /en/)
-  for (const asset of ['favicon.ico', 'apple-touch-icon.png', 'manifest.webmanifest']) {
+  // Same-site icon assets resolve from the page's folder (e.g. ../favicon.ico from /en/)
+  for (const asset of ['favicon.ico', 'apple-touch-icon.png']) {
     const href = head.match(new RegExp(`href="([^"]*${asset.replace('.', '\\.')})"`))[1];
     assert.equal(href, page.assetBase + asset, `${where}: ${asset} href`);
     assert.ok(fs.existsSync(path.resolve(path.dirname(page.file), href)), `${where}: ${href} does not exist`);
   }
+  // Manifest link: localized to each language folder (or valid same-site manifest)
+  const manifestHref = head.match(/href="([^"]*manifest\.webmanifest)"/)[1];
+  assert.ok(
+    manifestHref === 'manifest.webmanifest',
+    `${where}: unexpected manifest href ${manifestHref}`
+  );
+  assert.ok(fs.existsSync(path.resolve(path.dirname(page.file), manifestHref)), `${where}: ${manifestHref} does not exist`);
 
   // Performance: the landing markup comes before the ~2.5 MB of inline scripts
   // The one exception is the tiny theme switch that sets dark mode before the first paint.
@@ -294,9 +301,25 @@ for (const file of ['llms.txt', 'llms-full.txt']) {
     assert.ok(fs.existsSync(target), `${file}: link ${m[0]} has no file in site/`);
   }
 }
-const manifest = JSON.parse(fs.readFileSync(path.join(root, 'site', 'manifest.webmanifest'), 'utf8'));
-for (const icon of manifest.icons) {
-  assert.ok(fs.existsSync(path.join(root, 'site', icon.src)), `manifest icon ${icon.src} missing`);
+for (const [lang, relPath] of [['de', 'manifest.webmanifest'], ['en', 'en/manifest.webmanifest']]) {
+  const manifestPath = path.join(root, 'site', relPath);
+  assert.ok(fs.existsSync(manifestPath), `Missing manifest: ${relPath}`);
+  const manifestData = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const route = lang === 'en' ? '/en/' : '/';
+  assert.equal(manifestData.start_url, route, `${relPath}: start_url`);
+  assert.equal(manifestData.scope, route, `${relPath}: scope`);
+  assert.equal(manifestData.lang, lang, `${relPath}: manifest.lang must be ${lang}`);
+  assert.equal(manifestData.name, 'Doc Diff', `${relPath}: manifest.name`);
+  assert.equal(manifestData.short_name, 'DocDiff', `${relPath}: manifest.short_name`);
+  assert.equal(manifestData.description, I18N[lang].metaDescription, `${relPath}: manifest.description must match i18n metaDescription`);
+  assert.equal(manifestData.display, 'standalone', `${relPath}: manifest.display`);
+  assert.equal(manifestData.theme_color, '#060606', `${relPath}: manifest.theme_color`);
+  assert.equal(manifestData.background_color, '#060606', `${relPath}: manifest.background_color`);
+  assert.ok(Array.isArray(manifestData.icons) && manifestData.icons.length >= 3, `${relPath}: manifest icons`);
+  for (const icon of manifestData.icons) {
+    const iconRel = icon.src.startsWith('/') ? icon.src.slice(1) : icon.src;
+    assert.ok(fs.existsSync(path.join(root, 'site', iconRel)), `${relPath}: manifest icon ${icon.src} missing`);
+  }
 }
 console.log('✓ SEO checks passed (de + en pages, metadata, JSON-LD FAQ, robots, sitemap, llms.txt).');
 
